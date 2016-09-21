@@ -5,6 +5,7 @@ import java.util.*;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.CrossOrigin;
 //import org.springframework.web.bind.annotation.RequestParam;
 //import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -18,6 +19,7 @@ import com.voxatec.argame.objectModel.persistence.EntityManager;
 public class ARGameRestServices {
 
     /*--GET--------------------------------------------------------------------------------*/
+	@CrossOrigin
     @RequestMapping(value = "/cities", method = RequestMethod.GET)
     public Vector<City> getCities() throws ObjectNotFoundException {
     	
@@ -44,6 +46,7 @@ public class ARGameRestServices {
     }
 
     
+	@CrossOrigin
     @RequestMapping(value = "/adventures", method = RequestMethod.GET)
     public Vector<Adventure> getAdventures() throws ObjectNotFoundException {
     	
@@ -70,6 +73,7 @@ public class ARGameRestServices {
     }
 
 
+	@CrossOrigin
     @RequestMapping(value = "/stories", method = RequestMethod.GET)
     public Vector<Story> getStories() throws ObjectNotFoundException {
     	
@@ -96,6 +100,7 @@ public class ARGameRestServices {
     }
 
     
+	@CrossOrigin
     @RequestMapping(value = "/adventure-scenes", method = RequestMethod.GET)
     public Vector<Adventure> getAdventureScenes() throws ObjectNotFoundException {
     	
@@ -122,6 +127,7 @@ public class ARGameRestServices {
     }
 
 
+	@CrossOrigin
     @RequestMapping(value = "/scenes/{story_id}", method = RequestMethod.GET)
     public Vector<Scene> getStoryScenes(@PathVariable Integer story_id) throws ObjectNotFoundException {
     	
@@ -148,6 +154,7 @@ public class ARGameRestServices {
     }
     
     
+	@CrossOrigin
     @RequestMapping(value = "/files/xml/{cache_group_id}", method = RequestMethod.GET)
     public File getLocationXmlFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
     	
@@ -174,6 +181,7 @@ public class ARGameRestServices {
     }
 
 
+	@CrossOrigin
     @RequestMapping(value = "/files/dat/{cache_group_id}", method = RequestMethod.GET)
     public File getLocationDatFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
     	
@@ -200,6 +208,7 @@ public class ARGameRestServices {
     }
 
 
+	@CrossOrigin
     @RequestMapping(value = "/files/obj/{object3D_id}", method = RequestMethod.GET)
     public File getObject3DObjFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
     	
@@ -226,6 +235,7 @@ public class ARGameRestServices {
     }
 
 
+	@CrossOrigin
     @RequestMapping(value = "/files/mtl/{object3D_id}", method = RequestMethod.GET)
     public File getObject3DMtlFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
     	
@@ -252,6 +262,7 @@ public class ARGameRestServices {
     }
 
 
+	@CrossOrigin
     @RequestMapping(value = "/files/tex/{object3D_id}", method = RequestMethod.GET)
     public File getObject3DTexFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
     	
