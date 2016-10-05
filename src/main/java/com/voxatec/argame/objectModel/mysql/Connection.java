@@ -13,6 +13,7 @@ public class Connection {
 
     private java.sql.Connection conn = null;
 
+    //------ Opening a Connection ---------------------------------------------------------------------
     public void open (String hostName, String dbName, String userName, String password) throws SQLException {
         /* Open a connection to MySQL server */
         String url = String.format("jdbc:mysql://%s/%s", hostName, dbName);
@@ -21,28 +22,33 @@ public class Connection {
 
         try {
             Class.forName ("com.mysql.jdbc.Driver").newInstance();
-            conn = DriverManager.getConnection (url, userName, password);
+            this.conn = DriverManager.getConnection (url, userName, password);
             System.out.println("Connected");
         }
         catch (Exception e) {
             System.err.println ("Cannot connect to server: " + e.toString());
-            conn = null;
+            this.conn = null;
             System.exit (1);
         }
     }
+    
+    //------ Check whether Connection is open ------------------------------------------------------------
+   public Boolean isOpen() {
+    	return this.conn != null;
+    }
 
-    public ResultSet executeStatement (String sqlStmt) throws SQLException {
+   //------ Execute SQL Statement with return result -----------------------------------------------------
+    public ResultSet executeSelectStatement (String sqlStmt) throws SQLException {
         /* Execute the SQL statement. Returns a result set if any or null. */
         ResultSet resultSet = null;
         Statement stmt = null;
 
-        try {
-            stmt = conn.createStatement();
+        try {    		
+            stmt = this.conn.createStatement();
             boolean hasResultSet = stmt.execute(sqlStmt);
             if (hasResultSet) {
                 resultSet = stmt.getResultSet();
             }
-//            stmt.close();
             return resultSet;
         }
         catch (Exception e) {
@@ -54,14 +60,37 @@ public class Connection {
             return null;
         }
     }
+    
+    //------ Execute SQL Statement without return result --------------------------------------------------
+   public void executeUpdateStatement (String sqlStmt) throws SQLException {
+    	Statement stmt = null;
+    	
+    	try {
+    		if (this.conn == null) {
+    			System.err.println("conn is null");
+    		}
+    		
+    		stmt = this.conn.createStatement();
+    		stmt.executeUpdate(sqlStmt);
+    	}
+    	catch (Exception exception) {
+            System.err.println("Could not execute SQL statement: " + sqlStmt);
+            System.err.println("-> " + exception.toString());
+            exception.printStackTrace();
+            if (stmt != null) {
+                stmt.close();
+            }
+    	}
+    }
 
+    //------ Closing a Connection ---------------------------------------------------------------------
     public void close () {
         /* Close connection */
-        if (conn != null) {
+        if (this.conn != null) {
             try {
-                conn.close();
+            	this.conn.close();
                 System.out.println ("Disconnected");
-                conn = null;
+                this.conn = null;
             }
             catch (Exception e) {
                 /* Ignore close errors */

@@ -7,6 +7,7 @@ public class Riddle extends Object {
 	// attributes
 	private String challengeText;
 	private String responseText;
+	private String hintText;
 	
 	// accessors
 	public String getChallengeText() {
@@ -23,6 +24,14 @@ public class Riddle extends Object {
 	
 	public void setResponseText(String responseText) {
 		this.responseText = responseText;
+	}
+
+	public String getHintText() {
+		return hintText;
+	}
+	
+	public void setHintText(String hintText) {
+		this.hintText = hintText;
 	}
 
 }

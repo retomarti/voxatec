@@ -29,11 +29,14 @@ public class EntityManager {
     // Database access
     private void initConnection () throws SQLException {
         if (connection == null) {
+            connection = new Connection();
+        }
+
+        if (!connection.isOpen()) {
             dbHost = PropertyFileReader.getValueFor("dbHost");
             dbName = PropertyFileReader.getValueFor("dbName");
             userName = PropertyFileReader.getValueFor("dbUser");
             password = PropertyFileReader.getValueFor("dbPassword");
-            connection = new Connection();
             connection.open(dbHost, dbName, userName, password);
         }
     }
@@ -46,7 +49,7 @@ public class EntityManager {
             this.initConnection();
 
             String stmt = "select * from city";
-            ResultSet resultSet = this.connection.executeStatement(stmt);
+            ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
             while (resultSet.next()) {
                 // City object
@@ -68,7 +71,7 @@ public class EntityManager {
         return cityList;
 	}
     
-	public Vector<Adventure> loadAdventures() throws SQLException {
+	public Vector<Adventure> getAdventures() throws SQLException {
 
 		Vector<Adventure> adventureList = new Vector<Adventure>();
 
@@ -76,7 +79,7 @@ public class EntityManager {
 			this.initConnection();
 
 			String stmt = "select * from v_adventure";
-			ResultSet resultSet = this.connection.executeStatement(stmt);
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			while (resultSet.next()) {
 				// Adventure
@@ -99,8 +102,65 @@ public class EntityManager {
 		return adventureList;
 	}
 	
+	
+	public Adventure getAdventureById(Integer adventureId) throws SQLException {
+		
+		Adventure theAdventure = null;
+		
+		try {
+			this.initConnection();
 
-	public Vector<Story> loadStories() throws SQLException {
+			String template = "select * from adventure where id=%d";
+			String stmt = String.format(template, adventureId);
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			while (resultSet.next()) {
+				// Adventure
+				theAdventure = new Adventure();
+				theAdventure.setId(adventureId);
+				theAdventure.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
+				theAdventure.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
+			}
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+
+		return theAdventure;
+	}
+	
+	
+	public void updateAdventure(Adventure adventure) throws SQLException {
+		
+		if (adventure == null)
+			return;
+		
+		try {
+			this.initConnection();
+
+			String template = "update adventure set name=\"%s\", text=\"%s\" where id=%d";
+			String name = HtmlUtils.htmlUnescape(adventure.getName());
+			String text = HtmlUtils.htmlUnescape(adventure.getText());
+			Integer id  = adventure.getId();
+			String stmt = String.format(template, name, text, id);
+			
+			this.connection.executeUpdateStatement(stmt);
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+	
+
+	public Vector<Story> getStories() throws SQLException {
 
 		Vector<Story> storyList = new Vector<Story>();
 
@@ -108,7 +168,7 @@ public class EntityManager {
 			this.initConnection();
 
 			String stmt = "select * from v_story";
-			ResultSet resultSet = this.connection.executeStatement(stmt);
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			while (resultSet.next()) {
 				// Story
@@ -133,7 +193,66 @@ public class EntityManager {
 	}
 	
 
-	public Vector<Adventure> loadAdventureStories() throws SQLException {
+	public Story getStoryById(Integer storyId) throws SQLException {
+		
+		Story theStory = null;
+		
+		try {
+			this.initConnection();
+
+			String template = "select * from story where id=%d";
+			String stmt = String.format(template, storyId);
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			while (resultSet.next()) {
+				// Adventure
+				theStory = new Story();
+				theStory.setId(storyId);
+				theStory.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
+				theStory.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
+				theStory.setSeqNr(resultSet.getInt("seq_nr"));
+			}
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+
+		return theStory;
+	}
+	
+	
+	public void updateStory(Story story) throws SQLException {
+		
+		if (story == null)
+			return;
+		
+		try {
+			this.initConnection();
+
+			String template = "update story set name=\"%s\", text=\"%s\", seq_nr=%d where id=%d";
+			String name = HtmlUtils.htmlUnescape(story.getName());
+			String text = HtmlUtils.htmlUnescape(story.getText());
+			Integer seqNr = story.getSeqNr();
+			Integer id  = story.getId();
+			String stmt = String.format(template, name, text, seqNr, id);
+			
+			this.connection.executeUpdateStatement(stmt);
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+	
+
+	public Vector<Adventure> getAdventureStories() throws SQLException {
 
 		Vector<Adventure> adventureList = new Vector<Adventure>();
 		Vector<Story> storyList = null;
@@ -142,7 +261,7 @@ public class EntityManager {
 			this.initConnection();
 
 			String stmt = "select * from v_adventure_story";
-			ResultSet resultSet = this.connection.executeStatement(stmt);
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			Adventure adventure = null;
 			Story story = null;
@@ -192,7 +311,7 @@ public class EntityManager {
 		return adventureList;
 	}
 	
-	public Vector<Adventure> loadAdventureScenes() throws SQLException {
+	public Vector<Adventure> getAdventureScenes() throws SQLException {
 
 		Vector<Adventure> adventureList = new Vector<Adventure>();
 		Vector<Story> storyList = null;
@@ -202,11 +321,12 @@ public class EntityManager {
 			this.initConnection();
 
 			String stmt = "select * from v_adventure_scene";
-			ResultSet resultSet = this.connection.executeStatement(stmt);
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			Adventure adventure = null;
 			Story story = null;
 			Scene scene = null;
+			Riddle riddle = null;
 
 			while (resultSet.next()) {
 				// Adventure
@@ -225,7 +345,7 @@ public class EntityManager {
 				int storyId = resultSet.getInt("sto_id");
 				if (story == null || storyId != story.getId()) {
 					story = new Story();
-					story.setId(resultSet.getInt("sto_id"));
+					story.setId(storyId);
 					story.setSeqNr(resultSet.getInt("sto_seq_nr"));
 					story.setName(HtmlUtils.htmlEscape(resultSet.getString("sto_name")));
 					story.setText(HtmlUtils.htmlEscape(resultSet.getString("sto_text")));
@@ -237,9 +357,21 @@ public class EntityManager {
 				// Scene
 				scene = new Scene();
 				scene.setId(resultSet.getInt("sce_id"));
+				scene.setSeqNr(resultSet.getInt("sce_seq_nr"));
 				scene.setName(resultSet.getString("sce_name"));
 				scene.setText(HtmlUtils.htmlEscape(resultSet.getString("sce_text")));
 				sceneList.add(scene);
+				
+				// Riddle
+				int riddleId = resultSet.getInt("rid_id");
+				if (!resultSet.wasNull()) {
+					riddle = new Riddle();
+					riddle.setId(riddleId);
+					riddle.setChallengeText(HtmlUtils.htmlEscape(resultSet.getString("rid_challenge")));
+					riddle.setResponseText(HtmlUtils.htmlEscape(resultSet.getString("rid_response")));
+					riddle.setHintText(HtmlUtils.htmlEscape(resultSet.getString("rid_hint")));
+					scene.setRiddle(riddle);
+				}
 			}
 
 		} catch (SQLException exception) {
@@ -254,56 +386,23 @@ public class EntityManager {
 	}
 	
 	
-	public Vector<Scene> loadStoryScenes(Integer storyId) throws SQLException {
-
-		Vector<Scene> sceneList = new Vector<Scene>();
-
+	public Scene getSceneById(Integer sceneId) throws SQLException {
+		Scene theScene = null;
+		
 		try {
 			this.initConnection();
-			
-            String template = "select * from v_story_scene where sto_id = %d";
-            String stmt = String.format(template, storyId);
-            ResultSet resultSet = this.connection.executeStatement(stmt);
-            
+
+			String template = "select * from scene where id=%d";
+			String stmt = String.format(template, sceneId);
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
 			while (resultSet.next()) {
-				// Scene
-				Scene scene = new Scene();
-				scene.setId(resultSet.getInt("sce_id"));
-				scene.setName(HtmlUtils.htmlEscape(resultSet.getString("sce_name")));
-				scene.setText(HtmlUtils.htmlEscape(resultSet.getString("sce_text")));
-				sceneList.add(scene);
-				
-				// Cache
-				Cache cache = new Cache();
-				cache.setId(resultSet.getInt("cah_id"));
-				cache.setName(HtmlUtils.htmlEscape(resultSet.getString("cah_name")));
-				cache.setText(HtmlUtils.htmlEscape(resultSet.getString("cah_text")));
-				cache.setStreet(HtmlUtils.htmlEscape(resultSet.getString("cah_street")));
-				cache.setGps_lat(resultSet.getBigDecimal("cah_gps_lat"));
-				cache.setGps_long(resultSet.getBigDecimal("cah_gps_long"));
-				scene.setCache(cache);
-
-				// Object3D
-				Object3D object3D = new Object3D();
-				object3D.setId(resultSet.getInt("obj_id"));
-				object3D.setName(HtmlUtils.htmlEscape(resultSet.getString("obj_name")));
-				object3D.setObjFileLength(resultSet.getInt("obj_obj_file_len"));
-				scene.setObject3D(object3D);
-
-				// Material
-				Material material = new Material();
-				material.setMtlFileLength(resultSet.getInt("obj_mtl_file_len"));
-				material.setTexFileLength(resultSet.getInt("obj_tex_file_len"));
-				object3D.setMaterial(material);
-				
-				// Riddle
-				String challenge = (resultSet.getString("rid_challenge"));
-				if (challenge != null) {
-					Riddle riddle = new Riddle();
-					riddle.setChallengeText(challenge);
-					riddle.setResponseText(resultSet.getString("rid_response"));
-					scene.setRiddle(riddle);
-				}
+				// Adventure
+				theScene = new Scene();
+				theScene.setId(sceneId);
+				theScene.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
+				theScene.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
+				theScene.setSeqNr(resultSet.getInt("seq_nr"));
 			}
 
 		} catch (SQLException exception) {
@@ -314,11 +413,68 @@ public class EntityManager {
 			this.connection.close();
 		}
 
-		return sceneList;
+		return theScene;
 	}
 	
 	
-	public File loadXmlFile(Integer cacheGroupId) throws SQLException {
+	public void updateRiddle(Riddle riddle) throws SQLException {
+
+		if (riddle == null)
+			return;
+
+		try {
+			this.initConnection();
+
+			String template = "update riddle set challenge_text=\"%s\", response_text=\"%s\", hint_text=\"%s\" where id=%d";
+			String challengeText = HtmlUtils.htmlUnescape(riddle.getChallengeText());
+			String responseText = HtmlUtils.htmlUnescape(riddle.getResponseText());
+			String hintText = HtmlUtils.htmlUnescape(riddle.getHintText());
+			Integer id  = riddle.getId();
+			String stmt = String.format(template, challengeText, responseText, hintText, id);
+			
+			this.connection.executeUpdateStatement(stmt);
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+	
+	
+	public void updateScene(Scene scene) throws SQLException {
+		
+		if (scene == null)
+			return;
+		
+		try {
+			this.initConnection();
+
+			// Scene attributes
+			String template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d where id=%d";
+			String name = HtmlUtils.htmlUnescape(scene.getName());
+			String text = HtmlUtils.htmlUnescape(scene.getText());
+			Integer seqNr = scene.getSeqNr();
+			Integer id  = scene.getId();
+			String stmt = String.format(template, name, text, seqNr, id);
+			this.connection.executeUpdateStatement(stmt);
+			
+			// Riddle attributes
+			this.updateRiddle(scene.getRiddle());
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+	
+	
+	public File getXmlFile(Integer cacheGroupId) throws SQLException {
 		File xmlFile = new File();
 		
         try {
@@ -326,7 +482,7 @@ public class EntityManager {
 
 	        String template = "select target_img_xml_file_name, target_img_xml_file from cache_group where id=%d";
 	        String stmt = String.format(template, cacheGroupId);
-	        ResultSet resultSet = this.connection.executeStatement(stmt);
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("target_img_xml_file");
@@ -350,7 +506,7 @@ public class EntityManager {
 	}
 	
 
-	public File loadDatFile(Integer cacheGroupId) throws SQLException {
+	public File getDatFile(Integer cacheGroupId) throws SQLException {
 		File datFile = new File();
 		
         try {
@@ -358,7 +514,7 @@ public class EntityManager {
 
 	        String template = "select target_img_dat_file_name, target_img_dat_file from cache_group where id=%d";
 	        String stmt = String.format(template, cacheGroupId);
-	        ResultSet resultSet = this.connection.executeStatement(stmt);
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("target_img_dat_file");
@@ -382,7 +538,7 @@ public class EntityManager {
 	}
 	
 
-	public File loadObjFile(Integer object3DId) throws SQLException {
+	public File getObjFile(Integer object3DId) throws SQLException {
 		File objFile = new File();
 		
         try {
@@ -390,7 +546,7 @@ public class EntityManager {
 
 	        String template = "select obj_file_name, obj_file from object3D where id=%d";
 	        String stmt = String.format(template, object3DId);
-	        ResultSet resultSet = this.connection.executeStatement(stmt);
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("obj_file");
@@ -411,7 +567,7 @@ public class EntityManager {
 		return objFile;
 	}
 	
-	public File loadMtlFile(Integer object3DId) throws SQLException {
+	public File getMtlFile(Integer object3DId) throws SQLException {
 		File mtlFile = new File();
 		
         try {
@@ -419,7 +575,7 @@ public class EntityManager {
 
 	        String template = "select mtl_file_name, mtl_file from object3D where id=%d";
 	        String stmt = String.format(template, object3DId);
-	        ResultSet resultSet = this.connection.executeStatement(stmt);
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("mtl_file");
@@ -440,7 +596,7 @@ public class EntityManager {
 		return mtlFile;
 	}
 	
-	public File loadTexFile(Integer object3DId) throws SQLException {
+	public File getTexFile(Integer object3DId) throws SQLException {
 		File texFile = new File();
 		
         try {
@@ -448,7 +604,7 @@ public class EntityManager {
 
 	        String template = "select tex_file_name, tex_file from object3D where id=%d";
 	        String stmt = String.format(template, object3DId);
-	        ResultSet resultSet = this.connection.executeStatement(stmt);
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("tex_file");
