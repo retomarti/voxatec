@@ -8,12 +8,21 @@ import com.voxatec.argame.objectModel.beans.Riddle;
 public class Scene extends NamedObject {
 	
 	// attributes
+	private int storyId;
 	private int seqNr;
 	private Cache cache;
 	private Object3D object3D;
 	private Riddle riddle;
 
 	// accessors
+	public void setStoryId(int storyId) {
+		this.storyId = storyId;
+	}
+	
+	public int getStoryId() {
+		return this.storyId;
+	}
+	
 	public void setSeqNr(int aSeqNr) {
 		seqNr = aSeqNr;
 	}

@@ -13,11 +13,50 @@ import org.springframework.http.HttpStatus;
 
 import com.voxatec.argame.objectModel.beans.*;
 import com.voxatec.argame.objectModel.persistence.EntityManager;
+import com.voxatec.argame.objectModel.persistence.AdventureEntityManager;
+import com.voxatec.argame.objectModel.persistence.StoryEntityManager;
+import com.voxatec.argame.objectModel.persistence.SceneEntityManager;
 
 @RestController
 public class ARGameRestServices {
 
-    //------------------ Get all Cities -----------------------------------------------------------
+    //------------------ Helper -------------------------------------------------------------------
+	protected void logRequest(String message) {
+		System.out.println("---------------------------------------------");
+		System.out.println(message);
+		System.out.println("---------------------------------------------");
+	}
+	
+	
+    //------------------ Get Prototypes -----------------------------------------------------------
+	@CrossOrigin
+    @RequestMapping(value = "/prototypes", method = RequestMethod.GET)
+    public Adventure getPrototypes() throws ObjectNotFoundException {
+		
+		Adventure prototype;
+    	String errorMsg = "";
+    	
+    	try {
+    		this.logRequest("Get request for prototypes");
+    		AdventureEntityManager entityMgr = new AdventureEntityManager();
+    		prototype = entityMgr.getAdventurePrototype();
+    	}
+    	catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		prototype = null;  		
+    	}
+
+    	if (prototype == null) {
+    		// Cities not found in database
+            throw new ObjectNotFoundException("prototype", errorMsg);
+    	}
+    		
+    	return prototype;
+}
+	
+
+	//------------------ Get all Cities -----------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/cities", method = RequestMethod.GET)
     public Vector<City> getCities() throws ObjectNotFoundException {
@@ -26,9 +65,9 @@ public class ARGameRestServices {
     	String errorMsg = "";
     	
     	try {
-    		System.out.println("GET request for all cities");
+    		this.logRequest("GET request for all cities");
     		EntityManager entityMgr = new EntityManager();
-    		allCities = entityMgr.loadCities();
+    		allCities = entityMgr.getCities();
     	}
     	catch (Exception exception) {
     		System.out.println(exception.getMessage());
@@ -44,7 +83,7 @@ public class ARGameRestServices {
     	return allCities;
     }
 
-    //------------------ Get all Adventures ------------------------------------------------------
+	//------------------ Get all Adventures ------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/adventures", method = RequestMethod.GET)
     public Vector<Adventure> getAdventures() throws ObjectNotFoundException {
@@ -53,8 +92,8 @@ public class ARGameRestServices {
     	String errorMsg = "";
     	
     	try {
-    		System.out.println("GET request for all adventures");
-    		EntityManager entityMgr = new EntityManager();
+    		this.logRequest("GET request for all adventures");
+    		AdventureEntityManager entityMgr = new AdventureEntityManager();
     		adventureList = entityMgr.getAdventures();
     	}
     	catch (Exception exception) {
@@ -71,7 +110,36 @@ public class ARGameRestServices {
     	return adventureList;
     }
 	
-    //------------------ Update an Adventure ------------------------------------------------------	
+    //------------------ Create an Adventure ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/adventures", method = RequestMethod.POST)
+	public Adventure postAdventure(@RequestBody Adventure adventure) throws ObjectNotFoundException {
+		
+		Adventure theAdventure = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest("POST request for an adventure");
+
+    		AdventureEntityManager entityMgr = new AdventureEntityManager();
+    		theAdventure = entityMgr.createAdventure(adventure);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theAdventure = null;		
+		}
+		
+    	if (theAdventure == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("adventure", errorMsg);
+    	}
+		
+		return theAdventure;
+	}
+	
+	
+	//------------------ Update an Adventure ------------------------------------------------------	
 	@CrossOrigin
 	@RequestMapping(value = "/adventures/{adventure_id}", method = RequestMethod.PUT)
 	public Adventure putAdventure(@PathVariable Integer adventure_id,
@@ -81,11 +149,10 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
 		try {
-    		System.out.println("----------------------------");
-    		System.out.println("PUT request for an adventure");
+    		this.logRequest(String.format("PUT request for an adventure with id=%d", adventure_id));
     		
     		// Retrieve adventure entity
-    		EntityManager entityMgr = new EntityManager();
+    		AdventureEntityManager entityMgr = new AdventureEntityManager();
     		theAdventure = entityMgr.getAdventureById(adventure_id);
 			
 			if (theAdventure != null) {
@@ -118,8 +185,8 @@ public class ARGameRestServices {
     	String errorMsg = "";
     	
     	try {
-    		System.out.println("GET request for all stories");
-    		EntityManager entityMgr = new EntityManager();
+    		this.logRequest("GET request for all stories");
+    		StoryEntityManager entityMgr = new StoryEntityManager();
     		storyList = entityMgr.getStories();
     	}
     	catch (Exception exception) {
@@ -137,6 +204,35 @@ public class ARGameRestServices {
     }
 
     
+    //------------------ Create a Story -----------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/stories", method = RequestMethod.POST)
+	public Story postStory(@RequestBody Story story) throws ObjectNotFoundException {
+		
+		Story theStory = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest("POST request for a story");
+
+    		StoryEntityManager entityMgr = new StoryEntityManager();
+    		theStory = entityMgr.createStory(story);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theStory = null;		
+		}
+		
+    	if (theStory == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("story", errorMsg);
+    	}
+		
+		return theStory;
+	}
+	
+	
     //------------------ Update a Story ----------------------------------------------------------	
 	@CrossOrigin
 	@RequestMapping(value = "/stories/{story_id}", method = RequestMethod.PUT)
@@ -147,11 +243,8 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
 		try {
-    		System.out.println("-----------------------");
-    		System.out.println("PUT request for a story");
-    		
-    		// Retrieve adventure entity
-    		EntityManager entityMgr = new EntityManager();
+    		this.logRequest(String.format("PUT request for a story with id=%d", story_id));
+    		StoryEntityManager entityMgr = new StoryEntityManager();
     		theStory = entityMgr.getStoryById(story_id);
 			
 			if (theStory != null) {
@@ -185,8 +278,8 @@ public class ARGameRestServices {
     	String errorMsg = "";
     	
     	try {
-    		System.out.println("GET request for all adventure scenes");
-    		EntityManager entityMgr = new EntityManager();
+    		this.logRequest("GET request for all adventure scenes");
+    		SceneEntityManager entityMgr = new SceneEntityManager();
     		adventureList = entityMgr.getAdventureScenes();
     	}
     	catch (Exception exception) {
@@ -202,6 +295,35 @@ public class ARGameRestServices {
     			
     	return adventureList;
     }
+	
+	
+    //------------------ Create a Scene -----------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/scenes", method = RequestMethod.POST)
+	public Scene postStory(@RequestBody Scene scene) throws ObjectNotFoundException {
+		
+		Scene theScene = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest("POST request for a scene");
+
+    		SceneEntityManager entityMgr = new SceneEntityManager();
+    		theScene = entityMgr.createScene(scene);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theScene = null;		
+		}
+		
+    	if (theScene == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("scene", errorMsg);
+    	}
+		
+		return theScene;
+	}
 
 
     //------------------ Update a Scene ----------------------------------------------------------	
@@ -214,11 +336,11 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
 		try {
-    		System.out.println("-----------------------");
     		System.out.println("PUT request for a scene");
-    		
+    		this.logRequest(String.format("PUT request for a scene with id=%d", scene_id));
+
     		// Retrieve adventure entity
-    		EntityManager entityMgr = new EntityManager();
+    		SceneEntityManager entityMgr = new SceneEntityManager();
     		theScene = entityMgr.getSceneById(scene_id);
 			
 			if (theScene != null) {
@@ -251,7 +373,7 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
     	try {
-    		System.out.println(String.format("GET request for xml-file of a cache group with id=%d", cache_group_id));
+    		this.logRequest(String.format("GET request for xml-file of a cache group with id=%d", cache_group_id));
     		EntityManager entityMgr = new EntityManager();
     		xmlFile = entityMgr.getXmlFile(cache_group_id);
     			
@@ -278,7 +400,7 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
     	try {
-    		System.out.println(String.format("GET request for dat-file of a cache-group with id=%s", cache_group_id));
+    		this.logRequest(String.format("GET request for dat-file of a cache-group with id=%s", cache_group_id));
     		EntityManager entityMgr = new EntityManager();
     		datFile = entityMgr.getDatFile(cache_group_id);
     			
@@ -305,7 +427,7 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
     	try {
-    		System.out.println(String.format("GET request for obj-file of an object3D with id=", object3D_id));
+    		this.logRequest(String.format("GET request for obj-file of an object3D with id=", object3D_id));
     		EntityManager entityMgr = new EntityManager();
     		objFile = entityMgr.getObjFile(object3D_id);
     			
@@ -332,7 +454,7 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
     	try {
-    		System.out.println(String.format("GET request for mtl-file of an object3D with id=%d", object3D_id));
+    		this.logRequest(String.format("GET request for mtl-file of an object3D with id=%d", object3D_id));
     		EntityManager entityMgr = new EntityManager();
     		mtlFile = entityMgr.getMtlFile(object3D_id);
     			
@@ -359,7 +481,7 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
     	try {
-    		System.out.println(String.format("GET request for tex-file of an object3D with id=%d", object3D_id));
+    		this.logRequest(String.format("GET request for tex-file of an object3D with id=%d", object3D_id));
     		EntityManager entityMgr = new EntityManager();
     		texFile = entityMgr.getTexFile(object3D_id);
     			

@@ -10,11 +10,20 @@ import com.voxatec.argame.objectModel.beans.Scene;
 public class Story extends NamedObject {
 	
 	// attributes
+	private int adventureId;
 	private int seqNr;
 	private Cache startCache;
 	private Vector<Scene> sceneList;
 	
 	// accessors
+	public void setAdventureId(int adventureId) {
+		this.adventureId = adventureId;
+	}
+	
+	public int getAdventureId() {
+		return adventureId;
+	}
+	
 	public void setSeqNr(int aSeqNr) {
 		seqNr = aSeqNr;
 	}
