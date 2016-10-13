@@ -48,6 +48,7 @@ public class AdventureEntityManager extends EntityManager {
     	Object3D obj3D = new Object3D();
     	obj3D.setName(" ");
     	obj3D.setText(" ");
+    	obj3D.setObjFileName(" ");
     	scene.setObject3D(obj3D);
     	
     	return adventure;

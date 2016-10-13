@@ -16,6 +16,8 @@ import com.voxatec.argame.objectModel.persistence.EntityManager;
 import com.voxatec.argame.objectModel.persistence.AdventureEntityManager;
 import com.voxatec.argame.objectModel.persistence.StoryEntityManager;
 import com.voxatec.argame.objectModel.persistence.SceneEntityManager;
+import com.voxatec.argame.objectModel.persistence.Object3DEntityManager;
+
 
 @RestController
 public class ARGameRestServices {
@@ -267,6 +269,35 @@ public class ARGameRestServices {
 		
 		return theStory;
 	}
+	
+	
+    //------------------ Delete a Story ----------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/stories/{story_id}", method = RequestMethod.DELETE)
+	public void deleteStory(@PathVariable Integer story_id) throws ObjectNotFoundException {
+		
+		Story theStory = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for a story with id=%d", story_id));
+			StoryEntityManager entityMgr = new StoryEntityManager();
+			theStory = entityMgr.getStoryById(story_id);
+
+    		if (theStory != null) {
+    			entityMgr.deleteStory(story_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theStory == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("story", errorMsg);
+    	}
+
+	}
 
 
 	//------------------ Get all Adventure Scenes ----------------------------------------------	
@@ -336,10 +367,9 @@ public class ARGameRestServices {
     	String errorMsg = "";
 
 		try {
-    		System.out.println("PUT request for a scene");
     		this.logRequest(String.format("PUT request for a scene with id=%d", scene_id));
 
-    		// Retrieve adventure entity
+    		// Retrieve scene entity
     		SceneEntityManager entityMgr = new SceneEntityManager();
     		theScene = entityMgr.getSceneById(scene_id);
 			
@@ -364,7 +394,65 @@ public class ARGameRestServices {
 		return theScene;
 	}
 
+	
+    //------------------ Delete a Scene ----------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/scenes/{scene_id}", method = RequestMethod.DELETE)
+	public void deleteScene(@PathVariable Integer scene_id) throws ObjectNotFoundException {
+		
+		Scene theScene = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for a scene with id=%d", scene_id));
+			SceneEntityManager entityMgr = new SceneEntityManager();
+    		theScene = entityMgr.getSceneById(scene_id);
 
+    		if (theScene != null) {
+    			entityMgr.deleteScene(scene_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theScene == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("scene", errorMsg);
+    	}
+
+	}
+		
+		
+	//------------------ Get all Objects3D -------------------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/objects3D", method = RequestMethod.GET)
+    public Vector<Object3D> getObjects3D() throws ObjectNotFoundException {
+    	
+    	Vector<Object3D> object3DList = null;
+    	String errorMsg = "";
+    	
+    	try {
+    		this.logRequest("GET request for all objects3D");
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		object3DList = entityMgr.getObjects3D();
+    	}
+    	catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		object3DList = null;
+    	}
+    		
+    	if (object3DList == null) {
+    		// Objects not found in database
+            throw new ObjectNotFoundException("objects3D", errorMsg);
+    	}
+    			
+    	return object3DList;
+    }
+
+    
+    //------------------ Get Location XML file --------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/xml/{cache_group_id}", method = RequestMethod.GET)
     public File getLocationXmlFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
@@ -374,7 +462,7 @@ public class ARGameRestServices {
 
     	try {
     		this.logRequest(String.format("GET request for xml-file of a cache group with id=%d", cache_group_id));
-    		EntityManager entityMgr = new EntityManager();
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
     		xmlFile = entityMgr.getXmlFile(cache_group_id);
     			
     	} catch (Exception exception) {
@@ -392,6 +480,7 @@ public class ARGameRestServices {
     }
 
 
+    //------------------ Get Location DAT file -------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/dat/{cache_group_id}", method = RequestMethod.GET)
     public File getLocationDatFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
@@ -401,7 +490,7 @@ public class ARGameRestServices {
 
     	try {
     		this.logRequest(String.format("GET request for dat-file of a cache-group with id=%s", cache_group_id));
-    		EntityManager entityMgr = new EntityManager();
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
     		datFile = entityMgr.getDatFile(cache_group_id);
     			
     	} catch (Exception exception) {
@@ -418,7 +507,8 @@ public class ARGameRestServices {
     	return datFile;
     }
 
-
+	
+    //------------------ Get OBJ file ---------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/obj/{object3D_id}", method = RequestMethod.GET)
     public File getObject3DObjFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
@@ -428,7 +518,7 @@ public class ARGameRestServices {
 
     	try {
     		this.logRequest(String.format("GET request for obj-file of an object3D with id=", object3D_id));
-    		EntityManager entityMgr = new EntityManager();
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
     		objFile = entityMgr.getObjFile(object3D_id);
     			
     	} catch (Exception exception) {
@@ -446,6 +536,7 @@ public class ARGameRestServices {
     }
 
 
+    //------------------ Get MTL file ---------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/mtl/{object3D_id}", method = RequestMethod.GET)
     public File getObject3DMtlFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
@@ -455,7 +546,7 @@ public class ARGameRestServices {
 
     	try {
     		this.logRequest(String.format("GET request for mtl-file of an object3D with id=%d", object3D_id));
-    		EntityManager entityMgr = new EntityManager();
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
     		mtlFile = entityMgr.getMtlFile(object3D_id);
     			
     	} catch (Exception exception) {
@@ -473,6 +564,7 @@ public class ARGameRestServices {
     }
 
 
+    //------------------ Get TEX file ---------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/tex/{object3D_id}", method = RequestMethod.GET)
     public File getObject3DTexFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
@@ -482,7 +574,7 @@ public class ARGameRestServices {
 
     	try {
     		this.logRequest(String.format("GET request for tex-file of an object3D with id=%d", object3D_id));
-    		EntityManager entityMgr = new EntityManager();
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
     		texFile = entityMgr.getTexFile(object3D_id);
     			
     	} catch (Exception exception) {

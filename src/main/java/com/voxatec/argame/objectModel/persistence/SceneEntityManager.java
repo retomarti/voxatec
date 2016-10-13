@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.springframework.web.util.HtmlUtils;
 
 import com.voxatec.argame.objectModel.beans.Adventure;
+import com.voxatec.argame.objectModel.beans.Object3D;
 import com.voxatec.argame.objectModel.beans.Riddle;
 import com.voxatec.argame.objectModel.beans.Scene;
 import com.voxatec.argame.objectModel.beans.Story;
@@ -30,6 +31,7 @@ public class SceneEntityManager extends EntityManager {
 			Story story = null;
 			Scene scene = null;
 			Riddle riddle = null;
+			Object3D obj3D = null;
 
 			while (resultSet.next()) {
 				// Adventure
@@ -78,6 +80,17 @@ public class SceneEntityManager extends EntityManager {
 						riddle.setHintText(HtmlUtils.htmlEscape(resultSet.getString("rid_hint")));
 						scene.setRiddle(riddle);
 					}
+					
+					// Object3D
+					int obj3DId = resultSet.getInt("obj_id");
+					if (!resultSet.wasNull()) {
+						obj3D = new Object3D();
+						obj3D.setId(obj3DId);
+						obj3D.setName(HtmlUtils.htmlEscape(resultSet.getString("obj_name")));
+						obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("obj_text")));
+						obj3D.setObjFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_file_name")));
+						scene.setObject3D(obj3D);
+					}
 				}
 			}
 
@@ -93,6 +106,43 @@ public class SceneEntityManager extends EntityManager {
 	}
 	
 	
+	private Riddle createRiddle(Riddle riddle) throws SQLException {
+		if (riddle == null)
+			return null;
+		
+		// Insert story into DB
+		String template = "insert into riddle (challenge_text,response_text,hint_text) values (\"%s\",\"%s\",\"%s\")";
+		String challengeText = HtmlUtils.htmlUnescape(riddle.getChallengeText());
+		String responseText = HtmlUtils.htmlUnescape(riddle.getResponseText());
+		String hintText = HtmlUtils.htmlUnescape(riddle.getHintText());
+		String stmt = String.format(template, challengeText, responseText, hintText);
+		this.connection.executeUpdateStatement(stmt);
+		
+		// Retrieve auto inserted ID value
+		Integer lastInsertedId = this.getLastAutoInsertedId();
+		riddle.setId(lastInsertedId);
+		
+		return riddle;
+	}
+	
+	
+	private void updateRiddle(Riddle riddle) throws SQLException {
+
+		if (riddle == null)
+			return;
+
+		String template = "update riddle set challenge_text=\"%s\", response_text=\"%s\", hint_text=\"%s\" where id=%d";
+		String challengeText = HtmlUtils.htmlUnescape(riddle.getChallengeText());
+		String responseText = HtmlUtils.htmlUnescape(riddle.getResponseText());
+		String hintText = HtmlUtils.htmlUnescape(riddle.getHintText());
+		Integer id  = riddle.getId();
+		String stmt = String.format(template, challengeText, responseText, hintText, id);
+		
+		this.connection.executeUpdateStatement(stmt);
+
+	}
+	
+	
 	public Scene createScene(Scene scene) throws SQLException {
 		
 		if (scene == null)
@@ -101,13 +151,54 @@ public class SceneEntityManager extends EntityManager {
 		try {
 			this.initConnection();
 
-			// Insert story into DB
-			String template = "insert into scene (story_id,name,text,seq_nr) values (%d,\"%s\",\"%s\",%d)";
+			// Create riddle first
+			Riddle riddle = scene.getRiddle();
+			Boolean newRiddle = false;
+			
+			if (riddle != null ) {
+				if (riddle.getId() == -1) {
+					riddle = this.createRiddle(riddle);
+					newRiddle = riddle.getId() != -1;
+				}
+				else {
+					this.updateRiddle(riddle);
+				}
+			}
+			
+			// Insert scene into DB
+			String template = null;
+			String stmt = null;
+			
 			Integer storyId = scene.getStoryId();
 			String name = HtmlUtils.htmlUnescape(scene.getName());
 			String text = HtmlUtils.htmlUnescape(scene.getText());
 			Integer seqNr = scene.getSeqNr();
-			String stmt = String.format(template, storyId, name, text, seqNr);
+			
+			// Object3D
+			Integer obj3DId = -1;
+			if (scene.getObject3D() != null) {
+				obj3DId = scene.getObject3D().getId();
+			}
+			
+			if (newRiddle) {
+				Integer riddleId = riddle.getId();
+				if (obj3DId != -1) {
+					template = "insert into scene (story_id,name,text,seq_nr,object3D_id,riddle_id) values (%d,\"%s\",\"%s\",%d,%d,%d)";
+					stmt = String.format(template, storyId, name, text, seqNr, obj3DId, riddleId);
+				} else {
+					template = "insert into scene (story_id,name,text,seq_nr,riddle_id) values (%d,\"%s\",\"%s\",%d,%d)";
+					stmt = String.format(template, storyId, name, text, seqNr, riddleId);
+				}
+			}
+			else {
+				if (obj3DId != -1) {
+					template = "insert into scene (story_id,name,text,seq_nr,object3D_id) values (%d,\"%s\",\"%s\",%d,%d)";
+					stmt = String.format(template, storyId, name, text, seqNr, obj3DId);
+				} else {
+					template = "insert into scene (story_id,name,text,seq_nr) values (%d,\"%s\",\"%s\",%d)";
+					stmt = String.format(template, storyId, name, text, seqNr);
+				}
+			}
 			this.connection.executeUpdateStatement(stmt);
 			
 			// Retrieve auto inserted ID value
@@ -143,8 +234,12 @@ public class SceneEntityManager extends EntityManager {
 				theScene.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
 				theScene.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
 				theScene.setSeqNr(resultSet.getInt("seq_nr"));
+				Integer riddleId = resultSet.getInt("riddle_id");
+				theScene.setRiddle(this.getRiddleById(riddleId));
+				Integer obj3DId = resultSet.getInt("object3D_id");
+				theScene.setObject3D(this.getObject3DById(obj3DId));
 			}
-
+			
 		} catch (SQLException exception) {
 			System.out.print(exception.toString());
 			throw exception;
@@ -163,20 +258,138 @@ public class SceneEntityManager extends EntityManager {
 			return;
 		
 		try {
+			// Update riddle first
+			Riddle riddle = scene.getRiddle();
+			Boolean newRiddle = false;
+			
+			if (riddle != null ) {
+				if (riddle.getId() == -1) {
+					riddle = this.createRiddle(riddle);
+					newRiddle = riddle.getId() != -1;
+				}
+				else {
+					this.updateRiddle(riddle);
+				}
+			}
+
+			// Update scene
 			this.initConnection();
 
-			// Scene attributes
-			String template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d where id=%d";
+			// Scene attributes (object3D itself is not updated, only relation)
+			String template = null;
+			String stmt = null;
 			String name = HtmlUtils.htmlUnescape(scene.getName());
 			String text = HtmlUtils.htmlUnescape(scene.getText());
 			Integer seqNr = scene.getSeqNr();
+			Integer obj3DId = scene.getObject3D().getId();
 			Integer id  = scene.getId();
-			String stmt = String.format(template, name, text, seqNr, id);
-			this.connection.executeUpdateStatement(stmt);
-			
-			// Riddle attributes
-			this.updateRiddle(scene.getRiddle());
 
+			if (newRiddle) {
+				template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, object3D_id=%d, riddle_id=%d where id=%d";
+				Integer riddleId = riddle.getId();
+				stmt = String.format(template, name, text, seqNr, obj3DId, riddleId, id);
+			}
+			else {
+				template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, object3D_id=%d where id=%d";
+				stmt = String.format(template, name, text, seqNr, obj3DId, id);
+			}
+			this.connection.executeUpdateStatement(stmt);
+						
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+	
+	private Riddle getRiddleById(Integer riddleId) throws SQLException {
+		
+		Riddle theRiddle = null;
+		
+		if (riddleId != -1) {
+			String template = "select challenge_text, response_text, hint_text from riddle where id=%d";
+			String stmt = String.format(template, riddleId);			
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			while (resultSet.next()) {
+				// Adventure
+				theRiddle = new Riddle();
+				theRiddle.setId(riddleId);
+				theRiddle.setChallengeText(HtmlUtils.htmlEscape(resultSet.getString("challenge_text")));
+				theRiddle.setResponseText(HtmlUtils.htmlEscape(resultSet.getString("response_text")));
+				theRiddle.setHintText(HtmlUtils.htmlEscape(resultSet.getString("hint_text")));
+			}
+			
+			return theRiddle;
+		}
+		else {
+			return null;
+		}
+	}
+	
+	
+	private Object3D getObject3DById(Integer object3DId) throws SQLException {
+		
+		Object3D theObj3D = null;
+		
+		if (object3DId != -1) {
+			String template = "select name, text from object3D where id=%d";
+			String stmt = String.format(template, object3DId);			
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			while (resultSet.next()) {
+				// Adventure
+				theObj3D = new Object3D();
+				theObj3D.setId(object3DId);
+				theObj3D.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
+				theObj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
+			}
+			
+			return theObj3D;
+		}
+		else {
+			return null;
+		}
+	}
+	
+
+	private void deleteRiddle(Riddle riddle) throws SQLException {
+		
+		if (riddle != null && riddle.getId() != -1) {
+			String template = "delete from riddle where id=%d";
+			String stmt = String.format(template, riddle.getId());
+			this.connection.executeUpdateStatement(stmt);			
+		}
+		
+	}
+	
+	
+	public void deleteScene(Integer sceneId) throws SQLException {
+		
+		Scene theScene = null;
+		
+		if (sceneId == -1)
+			return;   // nothing to do
+		
+		try {
+			theScene = this.getSceneById(sceneId);
+			
+			this.initConnection();
+			
+			if (theScene != null) {
+				// Delete riddle first (if necessary)
+				if (theScene.getRiddle() != null && theScene.getRiddle().getId() != -1) {
+					this.deleteRiddle(theScene.getRiddle());
+				}
+				
+				// Now delete scene
+				String template = "delete from scene where id=%d";
+				String stmt = String.format(template, sceneId);
+				this.connection.executeUpdateStatement(stmt);
+			}
+		
 		} catch (SQLException exception) {
 			System.out.print(exception.toString());
 			throw exception;

@@ -137,6 +137,35 @@ public class StoryEntityManager extends EntityManager {
 		}
 	}
 	
+	
+	public void deleteStory(Integer storyId) throws SQLException {
+		
+		Story theStory = null;
+		
+		if (storyId == -1)
+			return;   // nothing to do
+		
+		try {
+			theStory = this.getStoryById(storyId);
+			
+			this.initConnection();
+			
+			if (theStory != null) {
+				// Delete story
+				String template = "delete from story where id=%d";
+				String stmt = String.format(template, storyId);
+				this.connection.executeUpdateStatement(stmt);
+			}
+		
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+	
 
 	public Vector<Adventure> getAdventureStories() throws SQLException {
 
