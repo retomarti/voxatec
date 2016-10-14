@@ -178,6 +178,35 @@ public class ARGameRestServices {
 	}
 
 
+    //------------------ Delete an Adventure ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/adventures/{adventure_id}", method = RequestMethod.DELETE)
+	public void deleteAdventure(@PathVariable Integer adventure_id) throws ObjectNotFoundException {
+		
+		Adventure theAdventure = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for an adventure with id=%d", adventure_id));
+			AdventureEntityManager entityMgr = new AdventureEntityManager();
+			theAdventure = entityMgr.getAdventureById(adventure_id);
+
+    		if (theAdventure != null) {
+    			entityMgr.deleteAdventure(adventure_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theAdventure == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("adventure", errorMsg);
+    	}
+
+	}
+
+
     //------------------ Get all Stories ---------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/stories", method = RequestMethod.GET)

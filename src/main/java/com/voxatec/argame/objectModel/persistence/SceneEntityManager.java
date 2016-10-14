@@ -252,17 +252,28 @@ public class SceneEntityManager extends EntityManager {
 	}
 	
 	
+	private boolean isRiddleEmpty(Riddle riddle) {
+		return  riddle == null ||
+			   (riddle.getChallengeText() == null || riddle.getChallengeText().length() == 0) &&
+			   (riddle.getResponseText() == null || riddle.getResponseText().length() == 0) &&
+			   (riddle.getHintText() == null || riddle.getHintText().length() == 0);
+	}
+	
+	
 	public void updateScene(Scene scene) throws SQLException {
 		
 		if (scene == null)
 			return;
 		
 		try {
+			// Update scene
+			this.initConnection();
+
 			// Update riddle first
 			Riddle riddle = scene.getRiddle();
 			Boolean newRiddle = false;
 			
-			if (riddle != null ) {
+			if (!isRiddleEmpty(riddle)) {
 				if (riddle.getId() == -1) {
 					riddle = this.createRiddle(riddle);
 					newRiddle = riddle.getId() != -1;
@@ -272,26 +283,38 @@ public class SceneEntityManager extends EntityManager {
 				}
 			}
 
-			// Update scene
-			this.initConnection();
-
 			// Scene attributes (object3D itself is not updated, only relation)
 			String template = null;
 			String stmt = null;
 			String name = HtmlUtils.htmlUnescape(scene.getName());
 			String text = HtmlUtils.htmlUnescape(scene.getText());
 			Integer seqNr = scene.getSeqNr();
-			Integer obj3DId = scene.getObject3D().getId();
 			Integer id  = scene.getId();
+			
+			// Object3D
+			Integer obj3DId = -1;
+			if (scene.getObject3D() != null) {
+				obj3DId = scene.getObject3D().getId();
+			}
 
 			if (newRiddle) {
-				template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, object3D_id=%d, riddle_id=%d where id=%d";
 				Integer riddleId = riddle.getId();
-				stmt = String.format(template, name, text, seqNr, obj3DId, riddleId, id);
+				if (obj3DId == -1) {
+					template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, riddle_id=%d where id=%d";
+					stmt = String.format(template, name, text, seqNr, riddleId, id);
+				} else {
+					template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, object3D_id=%d, riddle_id=%d where id=%d";
+					stmt = String.format(template, name, text, seqNr, obj3DId, riddleId, id);
+				}
 			}
 			else {
-				template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, object3D_id=%d where id=%d";
-				stmt = String.format(template, name, text, seqNr, obj3DId, id);
+				if (obj3DId == -1) {
+					template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d where id=%d";
+					stmt = String.format(template, name, text, seqNr, id);					
+				} else {
+					template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, object3D_id=%d where id=%d";
+					stmt = String.format(template, name, text, seqNr, obj3DId, id);
+				}
 			}
 			this.connection.executeUpdateStatement(stmt);
 						
@@ -379,15 +402,15 @@ public class SceneEntityManager extends EntityManager {
 			this.initConnection();
 			
 			if (theScene != null) {
-				// Delete riddle first (if necessary)
-				if (theScene.getRiddle() != null && theScene.getRiddle().getId() != -1) {
-					this.deleteRiddle(theScene.getRiddle());
-				}
-				
-				// Now delete scene
+				// Delete scene first
 				String template = "delete from scene where id=%d";
 				String stmt = String.format(template, sceneId);
 				this.connection.executeUpdateStatement(stmt);
+				
+				// Then delete riddle (if necessary)
+				if (theScene.getRiddle() != null && theScene.getRiddle().getId() != -1) {
+					this.deleteRiddle(theScene.getRiddle());
+				}
 			}
 		
 		} catch (SQLException exception) {

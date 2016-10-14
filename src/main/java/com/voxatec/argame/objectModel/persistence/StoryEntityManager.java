@@ -13,39 +13,6 @@ import com.voxatec.argame.objectModel.beans.Story;
 
 public class StoryEntityManager extends EntityManager {
 
-	public Story createStory(Story story) throws SQLException {
-		
-		if (story == null)
-			return null;
-		
-		try {
-			this.initConnection();
-
-			// Insert story into DB
-			String template = "insert into story (adventure_id,name,text,seq_nr) values (%d,\"%s\",\"%s\",%d)";
-			Integer advId = story.getAdventureId();
-			String name = HtmlUtils.htmlUnescape(story.getName());
-			String text = HtmlUtils.htmlUnescape(story.getText());
-			Integer seqNr = story.getSeqNr();
-			String stmt = String.format(template, advId, name, text, seqNr);
-			this.connection.executeUpdateStatement(stmt);
-			
-			// Retrieve auto inserted ID value
-			Integer lastInsertedId = this.getLastAutoInsertedId();
-			story.setId(lastInsertedId);
-
-		} catch (SQLException exception) {
-			System.out.print(exception.toString());
-			throw exception;
-
-		} finally {
-			this.connection.close();
-		}
-		
-		return story;
-	}
-	
-	
 	public Vector<Story> getStories() throws SQLException {
 
 		Vector<Story> storyList = new Vector<Story>();
@@ -79,6 +46,39 @@ public class StoryEntityManager extends EntityManager {
 	}
 	
 
+	public Story createStory(Story story) throws SQLException {
+		
+		if (story == null)
+			return null;
+		
+		try {
+			this.initConnection();
+
+			// Insert story into DB
+			String template = "insert into story (adventure_id,name,text,seq_nr) values (%d,\"%s\",\"%s\",%d)";
+			Integer advId = story.getAdventureId();
+			String name = HtmlUtils.htmlUnescape(story.getName());
+			String text = HtmlUtils.htmlUnescape(story.getText());
+			Integer seqNr = story.getSeqNr();
+			String stmt = String.format(template, advId, name, text, seqNr);
+			this.connection.executeUpdateStatement(stmt);
+			
+			// Retrieve auto inserted ID value
+			Integer lastInsertedId = this.getLastAutoInsertedId();
+			story.setId(lastInsertedId);
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+		
+		return story;
+	}
+	
+	
 	public Story getStoryById(Integer storyId) throws SQLException {
 		
 		Story theStory = null;
