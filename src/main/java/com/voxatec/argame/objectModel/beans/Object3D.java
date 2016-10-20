@@ -9,6 +9,7 @@ public class Object3D extends NamedObject {
 	// attributes
 	private String objFileName;
 	private Material material;
+	private byte[] image;
 
     // accessors
 	public String getObjFileName() {
@@ -25,6 +26,14 @@ public class Object3D extends NamedObject {
 
 	public void setMaterial(Material material) {
 		this.material = material;
+	}
+	
+	public byte[] getImage() {
+		return image;
+	}
+	
+	public void setImage(byte[] image) {
+		this.image = image;
 	}
 	
 }

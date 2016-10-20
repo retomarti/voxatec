@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 
 import com.voxatec.argame.objectModel.beans.*;
 import com.voxatec.argame.objectModel.persistence.EntityManager;
@@ -479,6 +481,101 @@ public class ARGameRestServices {
     			
     	return object3DList;
     }
+	
+	
+    //------------------ Create an Object3D -------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/objects3D", method = RequestMethod.POST)
+	public Object3D postObject3D(@RequestBody Object3D object3D) throws ObjectNotFoundException {
+		
+		Object3D theObject3D = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest("POST request for an object3D");
+
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		theObject3D = entityMgr.createObject3D(object3D);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theObject3D = null;		
+		}
+		
+    	if (theObject3D == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("object3D", errorMsg);
+    	}
+		
+		return theObject3D;
+	}
+	
+	
+    //------------------ Delete an Object3D ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/objects3D/{object3D_id}", method = RequestMethod.DELETE)
+	public void deleteObject3D(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
+		
+		Object3D theObject3D = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for an object3D with id=%d", object3D_id));
+			Object3DEntityManager entityMgr = new Object3DEntityManager();
+			theObject3D = entityMgr.getObject3DById(object3D_id);
+
+    		if (theObject3D != null) {
+    			entityMgr.deleteObject3D(object3D_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theObject3D == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("object3D", errorMsg);
+    	}
+
+	}
+
+	
+	//------------------ Update an Object3D ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/objects3D/{object3D_id}", method = RequestMethod.PUT)
+	public Object3D putObject3D(@PathVariable Integer object3D_id,
+								@RequestBody Object3D object3D) throws ObjectNotFoundException {
+		
+		Object3D theObject3D = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest(String.format("PUT request for an object3D with id=%d", object3D_id));
+    		
+    		// Retrieve adventure entity
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		theObject3D = entityMgr.getObject3DById(object3D_id);
+			
+			if (theObject3D != null) {
+				theObject3D.setName(object3D.getName());
+				theObject3D.setText(object3D.getText());
+				entityMgr.updateObject3D(theObject3D);
+			}
+		}
+		catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theObject3D = null;		
+		}
+		
+    	if (theObject3D == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("object3D", errorMsg);
+    	}
+		
+		return theObject3D;
+	}
 
     
     //------------------ Get Location XML file --------------------------------------------------	
@@ -535,18 +632,58 @@ public class ARGameRestServices {
     			
     	return datFile;
     }
+	
+	
+    //------------------ Get PNG Image of object3d ------------------------------------------------	
+	@CrossOrigin
+	@ResponseBody
+    @RequestMapping(value = "/images/object3D/{object3D_id}", method = RequestMethod.GET, produces = MediaType.IMAGE_PNG_VALUE)
+    public byte[] getObject3DImage(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
+    	
+    	byte[] imgData = "".getBytes();
+
+    	try {
+    		this.logRequest(String.format("GET request for image of object3D with id=%d", object3D_id));
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		imgData = entityMgr.getImage(object3D_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}
+    		    			
+    	return imgData;    
+    }
+
+	
+    //------------------ Update PNG Image of object3d ------------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/images/object3D/{object3D_id}", method = RequestMethod.PUT)
+    public void putObject3DImage(@PathVariable Integer object3D_id,
+    							 @RequestBody File imageFile) throws ObjectNotFoundException {
+    	
+    	try {
+    		this.logRequest(String.format("PUT request for image of object3D with id=%d", object3D_id));
+    		
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		entityMgr.updateImage(imageFile, object3D_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}
+    		    			
+    }
 
 	
     //------------------ Get OBJ file ---------------------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/obj/{object3D_id}", method = RequestMethod.GET)
-    public File getObject3DObjFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/obj/{object3D_id}", method = RequestMethod.GET, produces = "text/plain")
+    public String getObject3DObjFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
     	
-    	File objFile = null;
+    	String objFile = null;
     	String errorMsg = "";
 
     	try {
-    		this.logRequest(String.format("GET request for obj-file of an object3D with id=", object3D_id));
+    		this.logRequest(String.format("GET request for obj-file of an object3D with id=%d", object3D_id));
     		Object3DEntityManager entityMgr = new Object3DEntityManager();
     		objFile = entityMgr.getObjFile(object3D_id);
     			
@@ -565,12 +702,31 @@ public class ARGameRestServices {
     }
 
 
+    //------------------ Update OBJ file ------------------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/files/obj/{object3D_id}", method = RequestMethod.PUT)
+    public void putObject3DObjFile(@PathVariable Integer object3D_id,
+    							   @RequestBody File objFile) throws ObjectNotFoundException {
+    	
+    	try {
+    		this.logRequest(String.format("PUT request for obj-file of object3D with id=%d", object3D_id));
+    		
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		entityMgr.updateObjFile(objFile, object3D_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}
+    		    			
+    }
+
+	
     //------------------ Get MTL file ---------------------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/mtl/{object3D_id}", method = RequestMethod.GET)
-    public File getObject3DMtlFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/mtl/{object3D_id}", method = RequestMethod.GET, produces = "text/plain")
+    public String getObject3DMtlFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
     	
-    	File mtlFile = null;
+    	String mtlFile = null;
     	String errorMsg = "";
 
     	try {
@@ -591,33 +747,65 @@ public class ARGameRestServices {
     			
     	return mtlFile;
     }
-
-
-    //------------------ Get TEX file ---------------------------------------------------------	
+	
+	
+    //------------------ Update OBJ file ------------------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/tex/{object3D_id}", method = RequestMethod.GET)
-    public File getObject3DTexFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/mtl/{object3D_id}", method = RequestMethod.PUT)
+    public void putObject3DMtlFile(@PathVariable Integer object3D_id,
+    							   @RequestBody File mtlFile) throws ObjectNotFoundException {
     	
-    	File texFile = null;
-    	String errorMsg = "";
-
     	try {
-    		this.logRequest(String.format("GET request for tex-file of an object3D with id=%d", object3D_id));
+    		this.logRequest(String.format("PUT request for mtl-file of object3D with id=%d", object3D_id));
+    		
     		Object3DEntityManager entityMgr = new Object3DEntityManager();
-    		texFile = entityMgr.getTexFile(object3D_id);
+    		entityMgr.updateMtlFile(mtlFile, object3D_id);
     			
     	} catch (Exception exception) {
     		System.out.println(exception.getMessage());
-    		errorMsg = exception.getMessage();
-    		texFile = null;
     	}
-    		
-    	if (texFile == null) {
-    		// Object not found in database
-            throw new ObjectNotFoundException("files/tex", object3D_id, errorMsg);
-    	}
+    		    			
+    }
+
+
+    //------------------ Get TEX image file of object3d ------------------------------------------------	
+	@CrossOrigin
+	@ResponseBody
+    @RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.GET, produces = "image/jpeg")
+    public byte[] getObject3DTexImage(@PathVariable ("object3D_id") Integer object3D_id,
+    								  @PathVariable ("image_name") String image_name) throws ObjectNotFoundException {
+    	
+    	byte[] imgData = "".getBytes();
+
+    	try {
+    		this.logRequest(String.format("GET request for texture of object3D with id=%d and name=%s", object3D_id, image_name));
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		imgData = entityMgr.getTexFile(object3D_id, image_name);
     			
-    	return texFile;
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}
+    		    			
+    	return imgData;    
+    }
+
+	
+    //------------------ Update TEX file ------------------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/files/tex/{object3D_id}", method = RequestMethod.PUT)
+    public void putObject3DTexFile(@PathVariable Integer object3D_id,
+    							   @RequestBody File texFile) throws ObjectNotFoundException {
+    	
+    	try {
+    		this.logRequest(String.format("PUT request for tex-file of object3D with id=%d", object3D_id));
+    		
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		entityMgr.updateTexFile(texFile, object3D_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}
+    		    			
     }
 
 

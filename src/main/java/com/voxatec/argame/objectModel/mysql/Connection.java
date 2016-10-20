@@ -1,7 +1,10 @@
 package com.voxatec.argame.objectModel.mysql;
 
+import java.sql.Blob;
 import java.sql.DriverManager;
 import java.sql.Statement;
+
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 
@@ -16,7 +19,7 @@ public class Connection {
     //------ Opening a Connection ---------------------------------------------------------------------
     public void open (String hostName, String dbName, String userName, String password) throws SQLException {
         /* Open a connection to MySQL server */
-        String url = String.format("jdbc:mysql://%s/%s", hostName, dbName);
+        String url = String.format("jdbc:mysql://%s/%s?autoReconnect=true&useSSL=false", hostName, dbName);
         
         System.out.println("Opening Connection to MySQL database: " + url);
 
@@ -82,6 +85,22 @@ public class Connection {
             }
     	}
     }
+   
+   	//------ New prepared statement -------------------------------------------------------------------
+   public PreparedStatement newPreparedStatement(String sqlStmt) throws SQLException {
+	   if (this.isOpen())
+		   return this.conn.prepareStatement(sqlStmt);
+	   else
+		   return null;
+   }
+   
+   public Blob newBlob() throws SQLException {
+	   if (this.isOpen())
+		   return this.conn.createBlob();
+	   else
+		   return null;
+   }
+
 
     //------ Closing a Connection ---------------------------------------------------------------------
     public void close () {
