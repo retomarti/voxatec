@@ -1,7 +1,10 @@
 package com.voxatec.argame.objectModel.beans;
 
+import java.util.Vector;
+
 import com.voxatec.argame.objectModel.beans.Material;
 import com.voxatec.argame.objectModel.beans.NamedObject;
+import com.voxatec.argame.objectModel.beans.Texture;
 
 
 public class Object3D extends NamedObject {
@@ -9,7 +12,7 @@ public class Object3D extends NamedObject {
 	// attributes
 	private String objFileName;
 	private Material material;
-	private byte[] image;
+	private Vector<Texture> textureList;
 
     // accessors
 	public String getObjFileName() {
@@ -28,12 +31,12 @@ public class Object3D extends NamedObject {
 		this.material = material;
 	}
 	
-	public byte[] getImage() {
-		return image;
+	public void setTextureList(Vector<Texture> textureList) {
+		this.textureList = textureList;
 	}
 	
-	public void setImage(byte[] image) {
-		this.image = image;
+	public Vector<Texture> getTextureList() {
+		return textureList;
 	}
 	
 }

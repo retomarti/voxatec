@@ -6,11 +6,21 @@ import java.math.BigDecimal;
 public class Cache extends NamedObject {
 
 	// attributes
+	private int cacheGroupId;
 	private String street;
-	private BigDecimal gps_lat;
-	private BigDecimal gps_long;
+	private String targetImageFileName;
+	private BigDecimal gpsLatitude;
+	private BigDecimal gpsLongitude;
 
 	// accessors
+	public int getCacheGroupId() {
+		return cacheGroupId;
+	}
+	
+	public void setCacheGroupId(int cacheGroupId) {
+		this.cacheGroupId = cacheGroupId;
+	}
+	
 	public String getStreet() {
 		return street;
 	}
@@ -19,20 +29,28 @@ public class Cache extends NamedObject {
 		street = aStreet;
 	}
 	
-	public BigDecimal getGps_lat() {
-		return gps_lat;
+	public String getTargetImageFileName() {
+		return targetImageFileName;
+	}
+	
+	public void setTargetImageFileName(String fileName) {
+		this.targetImageFileName = fileName;
+	}
+	
+	public BigDecimal getGpsLatitude() {
+		return gpsLatitude;
 	}
 
-	public void setGps_lat(BigDecimal gps_lat) {
-		this.gps_lat = gps_lat;
+	public void setGpsLatitude(BigDecimal gpsLatitude) {
+		this.gpsLatitude = gpsLatitude;
 	}
 
-	public BigDecimal getGps_long() {
-		return gps_long;
+	public BigDecimal getGpsLongitude() {
+		return gpsLongitude;
 	}
 
-	public void setGps_long(BigDecimal gps_long) {
-		this.gps_long = gps_long;
+	public void setGpsLongitude(BigDecimal gpsLongitude) {
+		this.gpsLongitude = gpsLongitude;
 	}
 
 }

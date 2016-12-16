@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 
 import com.voxatec.argame.objectModel.beans.*;
-import com.voxatec.argame.objectModel.persistence.EntityManager;
 import com.voxatec.argame.objectModel.persistence.AdventureEntityManager;
+import com.voxatec.argame.objectModel.persistence.CityEntityManager;
+import com.voxatec.argame.objectModel.persistence.CacheEntityManager;
 import com.voxatec.argame.objectModel.persistence.StoryEntityManager;
 import com.voxatec.argame.objectModel.persistence.SceneEntityManager;
 import com.voxatec.argame.objectModel.persistence.Object3DEntityManager;
@@ -35,58 +35,39 @@ public class ARGameRestServices {
     //------------------ Get Prototypes -----------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/prototypes", method = RequestMethod.GET)
-    public Adventure getPrototypes() throws ObjectNotFoundException {
+    public Vector<NamedObject> getPrototypes() throws ObjectNotFoundException {
 		
-		Adventure prototype;
+		Vector<NamedObject> prototypes = new Vector<NamedObject>();
+		
+		Adventure adventurePrototype = null;
+		City cityPrototype = null;
     	String errorMsg = "";
     	
     	try {
     		this.logRequest("Get request for prototypes");
-    		AdventureEntityManager entityMgr = new AdventureEntityManager();
-    		prototype = entityMgr.getAdventurePrototype();
+    		AdventureEntityManager adventureMgr = new AdventureEntityManager();
+    		adventurePrototype = adventureMgr.getAdventurePrototype();
+    		prototypes.add(adventurePrototype);
+    		
+    		CityEntityManager cityMgr = new CityEntityManager();
+    		cityPrototype = cityMgr.getCityPrototype();
+    		prototypes.add(cityPrototype);
     	}
     	catch (Exception exception) {
     		System.out.println(exception.getMessage());
     		errorMsg = exception.getMessage();
-    		prototype = null;  		
+    		prototypes = null;  		
     	}
 
-    	if (prototype == null) {
-    		// Cities not found in database
-            throw new ObjectNotFoundException("prototype", errorMsg);
+    	if (prototypes == null) {
+    		// Prototypes not found in database
+            throw new ObjectNotFoundException("prototypes", errorMsg);
     	}
     		
-    	return prototype;
-}
+    	return prototypes;
+	}
 	
-
-	//------------------ Get all Cities -----------------------------------------------------------
-	@CrossOrigin
-    @RequestMapping(value = "/cities", method = RequestMethod.GET)
-    public Vector<City> getCities() throws ObjectNotFoundException {
-    	
-    	Vector<City> allCities = null;
-    	String errorMsg = "";
-    	
-    	try {
-    		this.logRequest("GET request for all cities");
-    		EntityManager entityMgr = new EntityManager();
-    		allCities = entityMgr.getCities();
-    	}
-    	catch (Exception exception) {
-    		System.out.println(exception.getMessage());
-    		errorMsg = exception.getMessage();
-    		allCities = null;
-    	}
-    		
-    	if (allCities == null) {
-    		// Cities not found in database
-            throw new ObjectNotFoundException("cities", errorMsg);
-    	}
-    			
-    	return allCities;
-    }
-
+	
 	//------------------ Get all Adventures ------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/adventures", method = RequestMethod.GET)
@@ -113,6 +94,7 @@ public class ARGameRestServices {
     			
     	return adventureList;
     }
+	
 	
     //------------------ Create an Adventure ------------------------------------------------------	
 	@CrossOrigin
@@ -207,7 +189,6 @@ public class ARGameRestServices {
     	}
 
 	}
-
 
     //------------------ Get all Stories ---------------------------------------------------------	
 	@CrossOrigin
@@ -512,35 +493,6 @@ public class ARGameRestServices {
 	}
 	
 	
-    //------------------ Delete an Object3D ------------------------------------------------------	
-	@CrossOrigin
-	@RequestMapping(value = "/objects3D/{object3D_id}", method = RequestMethod.DELETE)
-	public void deleteObject3D(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
-		
-		Object3D theObject3D = null;
-    	String errorMsg = "";
-		
-		try {
-			this.logRequest(String.format("DELETE request for an object3D with id=%d", object3D_id));
-			Object3DEntityManager entityMgr = new Object3DEntityManager();
-			theObject3D = entityMgr.getObject3DById(object3D_id);
-
-    		if (theObject3D != null) {
-    			entityMgr.deleteObject3D(object3D_id);
-    		}
-		}
-		catch (Exception exception) {
-			System.out.println(exception.getMessage());
-		}
-		
-    	if (theObject3D == null) {
-    		// Object not found in database
-            throw new ObjectNotFoundException("object3D", errorMsg);
-    	}
-
-	}
-
-	
 	//------------------ Update an Object3D ------------------------------------------------------	
 	@CrossOrigin
 	@RequestMapping(value = "/objects3D/{object3D_id}", method = RequestMethod.PUT)
@@ -578,17 +530,441 @@ public class ARGameRestServices {
 	}
 
     
-    //------------------ Get Location XML file --------------------------------------------------	
+    //------------------ Delete an Object3D ------------------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/xml/{cache_group_id}", method = RequestMethod.GET)
-    public File getLocationXmlFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
+	@RequestMapping(value = "/objects3D/{object3D_id}", method = RequestMethod.DELETE)
+	public void deleteObject3D(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
+		
+		Object3D theObject3D = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for an object3D with id=%d", object3D_id));
+			Object3DEntityManager entityMgr = new Object3DEntityManager();
+			theObject3D = entityMgr.getObject3DById(object3D_id);
+
+    		if (theObject3D != null) {
+    			entityMgr.deleteObject3D(object3D_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theObject3D == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("object3D", errorMsg);
+    	}
+
+	}
+
+	
+	//------------------ Get all Cities -----------------------------------------------------------
+	@CrossOrigin
+    @RequestMapping(value = "/cities", method = RequestMethod.GET)
+    public Vector<City> getCities() throws ObjectNotFoundException {
+    	
+    	Vector<City> allCities = null;
+    	String errorMsg = "";
+    	
+    	try {
+    		this.logRequest("GET request for all cities");
+    		CityEntityManager entityMgr = new CityEntityManager();
+    		allCities = entityMgr.getCities();
+    	}
+    	catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		allCities = null;
+    	}
+    		
+    	if (allCities == null) {
+    		// Cities not found in database
+            throw new ObjectNotFoundException("cities", errorMsg);
+    	}
+    			
+    	return allCities;
+    }
+	
+	
+    //------------------ Create a City -------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/cities", method = RequestMethod.POST)
+	public City postCity(@RequestBody City city) throws ObjectNotFoundException {
+		
+		City theCity = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest("POST request for a city");
+
+    		CityEntityManager entityMgr = new CityEntityManager();
+    		theCity = entityMgr.createCity(city);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theCity = null;		
+		}
+		
+    	if (theCity == null) {
+    		// City not found in database
+            throw new ObjectNotFoundException("city", errorMsg);
+    	}
+		
+		return theCity;
+	}
+	
+	
+	//------------------ Update a City ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/cities/{city_id}", method = RequestMethod.PUT)
+	public City putCity(@PathVariable Integer city_id,
+					    @RequestBody City city) throws ObjectNotFoundException {
+		
+		City theCity = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest(String.format("PUT request for a city with id=%d", city_id));
+    		
+    		// Retrieve adventure entity
+    		CityEntityManager entityMgr = new CityEntityManager();
+    		theCity = entityMgr.getCityById(city_id);
+			
+			if (theCity != null) {
+				theCity.setName(city.getName());
+				theCity.setText(city.getText());
+				theCity.setZip(city.getZip());
+				theCity.setCountry(city.getCountry());
+				entityMgr.updateCity(theCity);
+			}
+		}
+		catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theCity = null;		
+		}
+		
+    	if (theCity == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("city", errorMsg);
+    	}
+		
+		return theCity;
+	}
+
+    
+    //------------------ Delete a City ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/cities/{city_id}", method = RequestMethod.DELETE)
+	public void deleteCity(@PathVariable Integer city_id) throws ObjectNotFoundException {
+		
+		City theCity = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for a city with id=%d", city_id));
+			CityEntityManager entityMgr = new CityEntityManager();
+			theCity = entityMgr.getCityById(city_id);
+
+    		if (theCity != null) {
+    			entityMgr.deleteCity(city_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theCity == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("city", errorMsg);
+    	}
+
+	}
+	
+	
+    //------------------ Create a CacheGroup -------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/cache-groups", method = RequestMethod.POST)
+	public CacheGroup postCacheGroup(@RequestBody CacheGroup cacheGroup) throws ObjectNotFoundException {
+		
+		CacheGroup theCacheGroup = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest("POST request for a cache-group");
+
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		theCacheGroup = entityMgr.createCacheGroup(cacheGroup);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theCacheGroup = null;		
+		}
+		
+    	if (theCacheGroup == null) {
+    		// CacheGroup not found in database
+            throw new ObjectNotFoundException("cache-group", errorMsg);
+    	}
+		
+		return theCacheGroup;
+	}
+	
+	
+	//------------------ Update a CacheGroup ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/cache-groups/{cacheGroup_id}", method = RequestMethod.PUT)
+	public CacheGroup putCacheGroup(@PathVariable Integer cacheGroup_id,
+					                @RequestBody CacheGroup cacheGroup) throws ObjectNotFoundException {
+		
+		CacheGroup theCacheGroup = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest(String.format("PUT request for a cache-group with id=%d", cacheGroup_id));
+    		
+    		// Retrieve adventure entity
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		theCacheGroup = entityMgr.getCacheGroupById(cacheGroup_id);
+			
+			if (theCacheGroup != null) {
+				theCacheGroup.setName(cacheGroup.getName());
+				theCacheGroup.setText(cacheGroup.getText());
+				theCacheGroup.setTargetImageDatFileName(cacheGroup.getTargetImageDatFileName());
+				theCacheGroup.setTargetImageXmlFileName(cacheGroup.getTargetImageXmlFileName());
+				entityMgr.updateCacheGroup(theCacheGroup);
+			}
+		}
+		catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theCacheGroup = null;		
+		}
+		
+    	if (theCacheGroup == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("cache-group", errorMsg);
+    	}
+		
+		return theCacheGroup;
+	}
+
+    
+    //------------------ Delete a CacheGroup ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/cache-groups/{cacheGroup_id}", method = RequestMethod.DELETE)
+	public void deleteCacheGroup(@PathVariable Integer cacheGroup_id) throws ObjectNotFoundException {
+		
+		CacheGroup theCacheGroup = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for a cache-group with id=%d", cacheGroup_id));
+			CacheEntityManager entityMgr = new CacheEntityManager();
+			theCacheGroup = entityMgr.getCacheGroupById(cacheGroup_id);
+
+    		if (theCacheGroup != null) {
+    			entityMgr.deleteCacheGroup(cacheGroup_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theCacheGroup == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("cache-group", errorMsg);
+    	}
+
+	}
+
+
+	//------------------ Get all City Caches -----------------------------------------------------------
+	@CrossOrigin
+    @RequestMapping(value = "/city-caches", method = RequestMethod.GET)
+    public Vector<City> getCityCaches() throws ObjectNotFoundException {
+    	
+    	Vector<City> cityList = null;
+    	String errorMsg = "";
+    	
+    	try {
+    		this.logRequest("GET request for all city caches");
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		cityList = entityMgr.getCityCaches();
+    	}
+    	catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		cityList = null;
+    	}
+    		
+    	if (cityList == null) {
+    		// Objects not found in database
+            throw new ObjectNotFoundException("cities", errorMsg);
+    	}
+    			
+    	return cityList;
+    }
+	
+	
+    //------------------ Create a Cache -------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/caches", method = RequestMethod.POST)
+	public Cache postCache(@RequestBody Cache cache) throws ObjectNotFoundException {
+		
+		Cache theCache = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest("POST request for a cache");
+
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		theCache = entityMgr.createCache(cache);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theCache = null;		
+		}
+		
+    	if (theCache == null) {
+    		// Cache not found in database
+            throw new ObjectNotFoundException("cache", errorMsg);
+    	}
+		
+		return theCache;
+	}
+	
+	
+	//------------------ Update a Cache ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/caches/{cache_id}", method = RequestMethod.PUT)
+	public Cache putCache(@PathVariable Integer cache_id,
+					      @RequestBody Cache cache) throws ObjectNotFoundException {
+		
+		Cache theCache = null;
+    	String errorMsg = "";
+
+		try {
+    		this.logRequest(String.format("PUT request for a cache with id=%d", cache_id));
+    		
+    		// Retrieve cache entity
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		theCache = entityMgr.getCacheById(cache_id);
+			
+			if (theCache != null) {
+				theCache.setName(cache.getName());
+				theCache.setText(cache.getText());
+				theCache.setStreet(cache.getStreet());
+				theCache.setGpsLatitude(cache.getGpsLatitude());
+				theCache.setGpsLongitude(cache.getGpsLongitude());
+				entityMgr.updateCache(theCache);
+			}
+		}
+		catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		theCache = null;		
+		}
+		
+    	if (theCache == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("cache", errorMsg);
+    	}
+		
+		return theCache;
+	}
+
+    
+    //------------------ Delete a Cache ------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/caches/{cache_id}", method = RequestMethod.DELETE)
+	public void deleteCache(@PathVariable Integer cache_id) throws ObjectNotFoundException {
+		
+		Cache theCache = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for a cache with id=%d", cache_id));
+			CacheEntityManager entityMgr = new CacheEntityManager();
+			theCache = entityMgr.getCacheById(cache_id);
+
+    		if (theCache != null) {
+    			entityMgr.deleteCache(cache_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theCache == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("cache", errorMsg);
+    	}
+
+	}
+	
+	
+    //------------------ Get Target Image file of a cache -------------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/files/target-img/{cache_id}", method = RequestMethod.GET)
+    public byte[] getCacheTargetImageFile(@PathVariable Integer cache_id) throws ObjectNotFoundException {
+    	
+    	byte[] imgData = null;
+    	String errorMsg = "";
+
+    	try {
+    		this.logRequest(String.format("GET request for target image file of a cache with id=%s", cache_id));
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		imgData = entityMgr.getTargetImageFile(cache_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		imgData = null;
+    	}
+    		
+    	if (imgData == null) {
+    		// Target image file not found in database
+            throw new ObjectNotFoundException("files/target-img", cache_id, errorMsg);
+    	}
+    			
+    	return imgData;
+    }
+	
+	
+    //------------------ Update Target Image file of a cache ----------------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/files/target-img/{cache_id}", method = RequestMethod.PUT)
+    public void putCacheTargetImageFile(@PathVariable Integer cache_id,
+    							        @RequestBody File targetImgFile) throws ObjectNotFoundException {
+    	
+    	try {
+    		this.logRequest(String.format("PUT request for target image file of cache with id=%d", cache_id));
+    		
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		entityMgr.updateTargetImageFile(targetImgFile, cache_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}
+    		    			
+    }
+
+
+    //------------------ Get Target Image XML file of a cache-group ---------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/files/target-xml/{cache_group_id}", method = RequestMethod.GET)
+    public File getCacheGroupXmlFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
     	
     	File xmlFile = null;
     	String errorMsg = "";
 
     	try {
     		this.logRequest(String.format("GET request for xml-file of a cache group with id=%d", cache_group_id));
-    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		CacheEntityManager entityMgr = new CacheEntityManager();
     		xmlFile = entityMgr.getXmlFile(cache_group_id);
     			
     	} catch (Exception exception) {
@@ -606,17 +982,36 @@ public class ARGameRestServices {
     }
 
 
-    //------------------ Get Location DAT file -------------------------------------------------	
+    //------------------ Update Target Image XML file of a cache-group ------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/dat/{cache_group_id}", method = RequestMethod.GET)
-    public File getLocationDatFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/target-xml/{cacheGroup_id}", method = RequestMethod.PUT)
+    public void putCacheGroupXmlFile(@PathVariable Integer cacheGroup_id,
+    							     @RequestBody File xmlFile) throws ObjectNotFoundException {
+    	
+    	try {
+    		this.logRequest(String.format("PUT request for xml-file of cache-group with id=%d", cacheGroup_id));
+    		
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		entityMgr.updateXmlFile(xmlFile, cacheGroup_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}
+    		    			
+    }
+
+	
+    //------------------ Get Target Image DAT file of a cache-group ---------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/files/target-dat/{cache_group_id}", method = RequestMethod.GET)
+    public File getCacheGroupDatFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
     	
     	File datFile = null;
     	String errorMsg = "";
 
     	try {
     		this.logRequest(String.format("GET request for dat-file of a cache-group with id=%s", cache_group_id));
-    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		CacheEntityManager entityMgr = new CacheEntityManager();
     		datFile = entityMgr.getDatFile(cache_group_id);
     			
     	} catch (Exception exception) {
@@ -634,38 +1029,17 @@ public class ARGameRestServices {
     }
 	
 	
-    //------------------ Get PNG Image of object3d ------------------------------------------------	
+    //------------------ Update Target Image DAT file of a cache-group ------------------------------------------	
 	@CrossOrigin
-	@ResponseBody
-    @RequestMapping(value = "/images/object3D/{object3D_id}", method = RequestMethod.GET, produces = MediaType.IMAGE_PNG_VALUE)
-    public byte[] getObject3DImage(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
-    	
-    	byte[] imgData = "".getBytes();
-
-    	try {
-    		this.logRequest(String.format("GET request for image of object3D with id=%d", object3D_id));
-    		Object3DEntityManager entityMgr = new Object3DEntityManager();
-    		imgData = entityMgr.getImage(object3D_id);
-    			
-    	} catch (Exception exception) {
-    		System.out.println(exception.getMessage());
-    	}
-    		    			
-    	return imgData;    
-    }
-
-	
-    //------------------ Update PNG Image of object3d ------------------------------------------------	
-	@CrossOrigin
-    @RequestMapping(value = "/images/object3D/{object3D_id}", method = RequestMethod.PUT)
-    public void putObject3DImage(@PathVariable Integer object3D_id,
-    							 @RequestBody File imageFile) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/target-dat/{cacheGroup_id}", method = RequestMethod.PUT)
+    public void putCacheGroupDatFile(@PathVariable Integer cacheGroup_id,
+    							     @RequestBody File datFile) throws ObjectNotFoundException {
     	
     	try {
-    		this.logRequest(String.format("PUT request for image of object3D with id=%d", object3D_id));
+    		this.logRequest(String.format("PUT request for dat-file of cache-group with id=%d", cacheGroup_id));
     		
-    		Object3DEntityManager entityMgr = new Object3DEntityManager();
-    		entityMgr.updateImage(imageFile, object3D_id);
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		entityMgr.updateDatFile(datFile, cacheGroup_id);
     			
     	} catch (Exception exception) {
     		System.out.println(exception.getMessage());
@@ -674,7 +1048,7 @@ public class ARGameRestServices {
     }
 
 	
-    //------------------ Get OBJ file ---------------------------------------------------------	
+    //------------------ Get OBJ file of an Object3D ------------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/obj/{object3D_id}", method = RequestMethod.GET, produces = "text/plain")
     public String getObject3DObjFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
@@ -702,7 +1076,7 @@ public class ARGameRestServices {
     }
 
 
-    //------------------ Update OBJ file ------------------------------------------------------	
+    //------------------ Update OBJ file of an Object3D ---------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/obj/{object3D_id}", method = RequestMethod.PUT)
     public void putObject3DObjFile(@PathVariable Integer object3D_id,
@@ -721,7 +1095,7 @@ public class ARGameRestServices {
     }
 
 	
-    //------------------ Get MTL file ---------------------------------------------------------	
+    //------------------ Get MTL file of an Object3D ------------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/mtl/{object3D_id}", method = RequestMethod.GET, produces = "text/plain")
     public String getObject3DMtlFile(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
@@ -749,7 +1123,7 @@ public class ARGameRestServices {
     }
 	
 	
-    //------------------ Update OBJ file ------------------------------------------------------	
+    //------------------ Update MTL file of an Object3D ---------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/mtl/{object3D_id}", method = RequestMethod.PUT)
     public void putObject3DMtlFile(@PathVariable Integer object3D_id,
@@ -767,11 +1141,30 @@ public class ARGameRestServices {
     		    			
     }
 
-
-    //------------------ Get TEX image file of object3d ------------------------------------------------	
+	
+    //------------------ Create TEX image of an Object3D --------------------------------------------------------	
+	@CrossOrigin
+	@RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.POST)
+	public void postObject3DTexFile(@PathVariable ("object3D_id") Integer object3D_id,
+									@PathVariable ("image_name") String image_name,
+									@RequestBody File imageFile) throws ObjectNotFoundException {
+		
+		try {
+			this.logRequest(String.format("POST request for tex-file of object3D with id=%d", object3D_id));
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		entityMgr.createTexFile(imageFile, object3D_id);
+    		
+		} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+		}
+				
+	}
+	
+	
+    //------------------ Get TEX image file of an Object3D ------------------------------------------------------	
 	@CrossOrigin
 	@ResponseBody
-    @RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.GET, produces = "image/jpeg")
+    @RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.GET, produces = "image/*")
     public byte[] getObject3DTexImage(@PathVariable ("object3D_id") Integer object3D_id,
     								  @PathVariable ("image_name") String image_name) throws ObjectNotFoundException {
     	
@@ -790,25 +1183,37 @@ public class ARGameRestServices {
     }
 
 	
-    //------------------ Update TEX file ------------------------------------------------------	
+    //------------------ Delete TEX image file of Object3D ------------------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/tex/{object3D_id}", method = RequestMethod.PUT)
-    public void putObject3DTexFile(@PathVariable Integer object3D_id,
-    							   @RequestBody File texFile) throws ObjectNotFoundException {
-    	
-    	try {
-    		this.logRequest(String.format("PUT request for tex-file of object3D with id=%d", object3D_id));
-    		
-    		Object3DEntityManager entityMgr = new Object3DEntityManager();
-    		entityMgr.updateTexFile(texFile, object3D_id);
-    			
-    	} catch (Exception exception) {
-    		System.out.println(exception.getMessage());
+	@RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.DELETE)
+	public void deleteObject3DTexImage(@PathVariable ("object3D_id") Integer object3D_id,
+									   @PathVariable ("image_name") String image_name) throws ObjectNotFoundException {
+		
+		Object3D theObject3D = null;
+    	String errorMsg = "";
+		
+		try {
+			this.logRequest(String.format("DELETE request for a texture image of object3D with id=%d", object3D_id));
+			Object3DEntityManager entityMgr = new Object3DEntityManager();
+			theObject3D = entityMgr.getObject3DById(object3D_id);
+
+    		if (theObject3D != null) {
+    			entityMgr.deleteTexFile(image_name, object3D_id);
+    		}
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
+		
+    	if (theObject3D == null) {
+    		// Object not found in database
+            throw new ObjectNotFoundException("object3D", errorMsg);
     	}
-    		    			
-    }
 
+	}
 
+	
+    //------------------ OBJECT-NOT-FOUND Exception -------------------------------------------------------------	
     @ResponseStatus(HttpStatus.NOT_FOUND)
     class ObjectNotFoundException extends RuntimeException {
 

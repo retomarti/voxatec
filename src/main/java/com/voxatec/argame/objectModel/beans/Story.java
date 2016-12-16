@@ -12,7 +12,6 @@ public class Story extends NamedObject {
 	// attributes
 	private int adventureId;
 	private int seqNr;
-	private Cache startCache;
 	private Vector<Scene> sceneList;
 	
 	// accessors
@@ -30,14 +29,6 @@ public class Story extends NamedObject {
 	
 	public int getSeqNr() {
 		return seqNr;
-	}
-	
-	public Cache getStartCache() {
-		return startCache;
-	}
-
-	public void setStartCache(Cache startCache) {
-		this.startCache = startCache;
 	}
 	
 	public Vector<Scene> getSceneList() {

@@ -1,0 +1,57 @@
+[
+  	{
+  		"className": "Adventure",
+  		"tableName": "adventure",
+  		"col-map": [
+  			{
+  				"attr-name": "id",
+  				"attr-type": "int",
+  				"col-name": "id",
+  				"col-type": "int(11)"
+  			},
+  			{
+  				"attr-name": "name",
+  				"attr-type": "String",
+  				"col-name": "name",
+  				"col-type": "varchar(100)"
+  			},
+  			{
+  				"attr-name": "text",
+  				"attr-type": "String",
+  				"col-name": "text",
+  				"col-type": "varchar(2000)"
+  			}
+  		]
+  	},
+  	{
+  		"className": "Story",
+  		"tableName": "story",
+  		"col-map": [
+  			{
+  				"attr-name": "id",
+  				"attr-type": "int",
+  				"col-name": "id",
+  				"col-type": "int(11)"
+  			},
+  			{
+  				"attr-name": "name",
+  				"attr-type": "String",
+  				"col-name": "name",
+  				"col-type": "varchar(100)"
+  			},
+  			{
+  				"attr-name": "text",
+  				"attr-type": "String",
+  				"col-name": "text",
+  				"col-type": "varchar(2000)"
+  			},
+  			{
+  				"attr-name": "seqNr",
+  				"attr-type": "int",
+  				"col-name": "seq_nr",
+  				"col-type": "int(11)"
+  			}
+  		]
+  	}  	
+ 	
+]

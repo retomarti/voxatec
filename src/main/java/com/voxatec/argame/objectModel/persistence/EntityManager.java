@@ -1,33 +1,34 @@
 package com.voxatec.argame.objectModel.persistence;
 
-import com.voxatec.argame.objectModel.beans.*;
 import com.voxatec.argame.objectModel.mysql.*;
+import com.voxatec.argame.objectModel.beans.Object;
+import com.voxatec.argame.util.EntityMappingFileReader;
 import com.voxatec.argame.util.PropertyFileReader;
 
-import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-import org.springframework.web.util.HtmlUtils;
 
 /**
  * Created by retomarti on 16/04/16.
  */
 public class EntityManager {
 
-    // Connection
+	// Constants
+	static protected int UNDEF_ID = -1;
+	
+    // DB Connection
 	protected Connection connection = null;
     private String dbHost = null;
     private String dbName = null;
     private String userName = null;
-    private String password = null;
-
-    // Caches
-    // private static Map<String, Client> allClients = null;
-
-    // Database access
-    protected void initConnection () throws SQLException {
+    private String password = null;    
+    
+    
+    // Database connection --------------------------------------------------------------------------
+    
+ 	protected void initConnection () throws SQLException {
         if (connection == null) {
             connection = new Connection();
         }
@@ -41,8 +42,15 @@ public class EntityManager {
         }
     }
     
+ 	
+    // Helper Functions ----------------------------------------------------------------------------
+	
+	protected String getEntityTable(Object entityBean) {
+		return null;
+	}
+    
     protected Integer getLastAutoInsertedId() throws SQLException {
-    	Integer lastInsertedId = -1;
+    	Integer lastInsertedId = EntityManager.UNDEF_ID;
     	
     	try {
     		String stmt = "select LAST_INSERT_ID()";
@@ -61,65 +69,140 @@ public class EntityManager {
     }
     
     
-    public Vector<City> getCities() throws SQLException {
-    	
-    	Vector<City> cityList = new Vector<City>();
-
-        try {
-            this.initConnection();
-
-            String stmt = "select * from city";
-            ResultSet resultSet = this.connection.executeSelectStatement(stmt);
-
-            while (resultSet.next()) {
-                // City object
-                City newCity = new City();
-                newCity.setId(resultSet.getInt("id"));
-                newCity.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
-                newCity.setCountry(HtmlUtils.htmlEscape(resultSet.getString("country")));
-               cityList.add(newCity);
-            }
-
-        } catch (SQLException exception ) {
-            System.out.print(exception.toString());
-            throw exception;
-
-        } finally {
-            this.connection.close();
-        }
-
-        return cityList;
-	}
-    
-	public File getXmlFile(Integer cacheGroupId) throws SQLException {
-		File xmlFile = new File();
+	protected String queryfiableString(String string) {
 		
-        try {
+		byte[] chars = string.getBytes();
+		
+		for (int i=0; i<string.length(); i++) {
+			switch (chars[i]) {
+				case '"':	chars[i] = '\'';		// we use '"' to embrace strings -> they should not be part of a string
+				default: // do nothing
+			}
+		}
+		
+		return new String(chars);
+	}
+
+	
+    // Bean Persistency ----------------------------------------------------------------------------
+	
+	protected String columnNameOfAttribute(Object entityBean, String attributeName) {
+		Map<String,String> colMap = EntityMappingFileReader.columnMapForBeanClass(entityBean.getClassName());
+		String columnName = colMap.get(attributeName);
+		return columnName;
+	}
+	
+	protected String getInsertColumnList(Object entityBean) {
+		Map<String,String> colMap = EntityMappingFileReader.columnMapForBeanClass(entityBean.getClassName());
+		String columnList = new String();
+		
+		for (String key: colMap.keySet()) {
+		    String columnName = colMap.get(key);
+		    
+		    if (!columnList.isEmpty() && columnName != null && !columnName.isEmpty()) {
+		    	columnList = columnList + ',';
+		    }
+		    columnList += columnName;
+		}
+		
+		return columnList;
+	}
+	
+	protected String getInsertColumnValueList(Object entityBean) {
+		Map<String,String> colMap = EntityMappingFileReader.columnMapForBeanClass(entityBean.getClassName());
+		String columnValueList = new String();
+		
+		for (String key: colMap.keySet()) {
+		    String attributeName = key;
+		    
+		}
+		
+		return columnValueList;
+	}
+	
+	public Object insertEntityBean(Object entityBean) throws SQLException {
+		if (entityBean == null)
+			return null;
+		
+		try {
 			this.initConnection();
-
-	        String template = "select target_img_xml_file_name, target_img_xml_file from cache_group where id=%d";
-	        String stmt = String.format(template, cacheGroupId);
-	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
-
-			if (resultSet.next()) {
-				Blob blob = resultSet.getBlob("target_img_xml_file");
-				if (blob != null) {
-					String strContent = new String(blob.getBytes(1l, (int) blob.length()));
-					xmlFile.setContent(HtmlUtils.htmlEscape(strContent));
-					xmlFile.setMimeType("text/plain");
-				}
-				xmlFile.setName(resultSet.getString("target_img_xml_file_name"));
-        	}
 			
-        } catch (Exception exception) {
+			String template = "insert into %s (%s) values (%s)";
+			String tableName = this.getEntityTable(entityBean);
+			String colNameList = this.getInsertColumnList(entityBean);
+			String colValueList = this.getInsertColumnValueList(entityBean);
+			String stmt = String.format(template, tableName, colNameList, colValueList);
+			this.connection.executeUpdateStatement(stmt);
+
+			// Retrieve auto inserted ID value
+			Integer lastInsertedId = this.getLastAutoInsertedId();
+			entityBean.setId(lastInsertedId);
+
+		} catch (SQLException exception) {
+			entityBean = null;
 			System.out.print(exception.toString());
-			throw exception;        	
-			
+			throw exception;
+
 		} finally {
 			this.connection.close();
 		}
 		
-		return xmlFile;
+		return entityBean;
+	}
+
+	
+	public Object selectEntityBean(int beanId) throws SQLException {
+		Object theBean = null;
+		
+		return theBean;
 	}
 	
+
+	protected String updateColumnValueList(Object entityBean) {
+		return null;
+	}
+		
+
+	public void updateEntityBean(Object entityBean) throws SQLException {
+		if (entityBean == null)
+			return;
+		
+		try {
+			this.initConnection();
+			
+			String template = "update %s set %s where id=%d";
+			String colNameValueList = this.updateColumnValueList(entityBean);
+			String stmt = String.format(template, this.getEntityTable(entityBean), colNameValueList, entityBean.getId());
+			this.connection.executeUpdateStatement(stmt);
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+	
+	public void deleteEntityBean(Object entityBean) throws SQLException {
+		
+		if (entityBean == null || entityBean.getId() == EntityManager.UNDEF_ID)
+			return;   // nothing to do
+		
+		try {			
+			this.initConnection();
+			
+			String template = "delete from %s where id=%d";
+			String stmt = String.format(template, this.getEntityTable(entityBean), entityBean.getId());
+			this.connection.executeUpdateStatement(stmt);
+		
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+    
 }

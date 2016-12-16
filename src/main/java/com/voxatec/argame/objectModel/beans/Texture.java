@@ -3,16 +3,15 @@ package com.voxatec.argame.objectModel.beans;
 public class Texture extends NamedObject {
 	
 	// attributes
-	private String mimeType;
+	private String imageType;
 	
 	// accessors
-	public String getMimeType() {
-		return mimeType;
+	public String getImageType() {
+		return imageType;
 	}
 	
-	public void setMimeType(String mimeType) {
-		this.mimeType = mimeType;
+	public void setImageType(String imageType) {
+		this.imageType = imageType;
 	}
-
-
+	
 }

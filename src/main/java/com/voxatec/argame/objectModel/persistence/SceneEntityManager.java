@@ -132,9 +132,9 @@ public class SceneEntityManager extends EntityManager {
 			return;
 
 		String template = "update riddle set challenge_text=\"%s\", response_text=\"%s\", hint_text=\"%s\" where id=%d";
-		String challengeText = HtmlUtils.htmlUnescape(riddle.getChallengeText());
-		String responseText = HtmlUtils.htmlUnescape(riddle.getResponseText());
-		String hintText = HtmlUtils.htmlUnescape(riddle.getHintText());
+		String challengeText = this.queryfiableString(HtmlUtils.htmlUnescape(riddle.getChallengeText()));
+		String responseText = this.queryfiableString(HtmlUtils.htmlUnescape(riddle.getResponseText()));
+		String hintText = this.queryfiableString(HtmlUtils.htmlUnescape(riddle.getHintText()));
 		Integer id  = riddle.getId();
 		String stmt = String.format(template, challengeText, responseText, hintText, id);
 		
@@ -156,9 +156,9 @@ public class SceneEntityManager extends EntityManager {
 			Boolean newRiddle = false;
 			
 			if (riddle != null ) {
-				if (riddle.getId() == -1) {
+				if (riddle.getId() == EntityManager.UNDEF_ID) {
 					riddle = this.createRiddle(riddle);
-					newRiddle = riddle.getId() != -1;
+					newRiddle = riddle.getId() != EntityManager.UNDEF_ID;
 				}
 				else {
 					this.updateRiddle(riddle);
@@ -171,18 +171,18 @@ public class SceneEntityManager extends EntityManager {
 			
 			Integer storyId = scene.getStoryId();
 			String name = HtmlUtils.htmlUnescape(scene.getName());
-			String text = HtmlUtils.htmlUnescape(scene.getText());
+			String text = this.queryfiableString(HtmlUtils.htmlUnescape(scene.getText()));
 			Integer seqNr = scene.getSeqNr();
 			
 			// Object3D
-			Integer obj3DId = -1;
+			Integer obj3DId = EntityManager.UNDEF_ID;
 			if (scene.getObject3D() != null) {
 				obj3DId = scene.getObject3D().getId();
 			}
 			
 			if (newRiddle) {
 				Integer riddleId = riddle.getId();
-				if (obj3DId != -1) {
+				if (obj3DId != EntityManager.UNDEF_ID) {
 					template = "insert into scene (story_id,name,text,seq_nr,object3D_id,riddle_id) values (%d,\"%s\",\"%s\",%d,%d,%d)";
 					stmt = String.format(template, storyId, name, text, seqNr, obj3DId, riddleId);
 				} else {
@@ -191,7 +191,7 @@ public class SceneEntityManager extends EntityManager {
 				}
 			}
 			else {
-				if (obj3DId != -1) {
+				if (obj3DId != EntityManager.UNDEF_ID) {
 					template = "insert into scene (story_id,name,text,seq_nr,object3D_id) values (%d,\"%s\",\"%s\",%d,%d)";
 					stmt = String.format(template, storyId, name, text, seqNr, obj3DId);
 				} else {
@@ -274,9 +274,9 @@ public class SceneEntityManager extends EntityManager {
 			Boolean newRiddle = false;
 			
 			if (!isRiddleEmpty(riddle)) {
-				if (riddle.getId() == -1) {
+				if (riddle.getId() == EntityManager.UNDEF_ID) {
 					riddle = this.createRiddle(riddle);
-					newRiddle = riddle.getId() != -1;
+					newRiddle = riddle.getId() != EntityManager.UNDEF_ID;
 				}
 				else {
 					this.updateRiddle(riddle);
@@ -287,19 +287,19 @@ public class SceneEntityManager extends EntityManager {
 			String template = null;
 			String stmt = null;
 			String name = HtmlUtils.htmlUnescape(scene.getName());
-			String text = HtmlUtils.htmlUnescape(scene.getText());
+			String text = this.queryfiableString(HtmlUtils.htmlUnescape(scene.getText()));
 			Integer seqNr = scene.getSeqNr();
 			Integer id  = scene.getId();
 			
 			// Object3D
-			Integer obj3DId = -1;
+			Integer obj3DId = EntityManager.UNDEF_ID;
 			if (scene.getObject3D() != null) {
 				obj3DId = scene.getObject3D().getId();
 			}
 
 			if (newRiddle) {
 				Integer riddleId = riddle.getId();
-				if (obj3DId == -1) {
+				if (obj3DId == EntityManager.UNDEF_ID) {
 					template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d, riddle_id=%d where id=%d";
 					stmt = String.format(template, name, text, seqNr, riddleId, id);
 				} else {
@@ -308,7 +308,7 @@ public class SceneEntityManager extends EntityManager {
 				}
 			}
 			else {
-				if (obj3DId == -1) {
+				if (obj3DId == EntityManager.UNDEF_ID) {
 					template = "update scene set name=\"%s\", text=\"%s\", seq_nr=%d where id=%d";
 					stmt = String.format(template, name, text, seqNr, id);					
 				} else {
@@ -331,7 +331,7 @@ public class SceneEntityManager extends EntityManager {
 		
 		Riddle theRiddle = null;
 		
-		if (riddleId != -1) {
+		if (riddleId != EntityManager.UNDEF_ID) {
 			String template = "select challenge_text, response_text, hint_text from riddle where id=%d";
 			String stmt = String.format(template, riddleId);			
 			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
@@ -357,7 +357,7 @@ public class SceneEntityManager extends EntityManager {
 		
 		Object3D theObj3D = null;
 		
-		if (object3DId != -1) {
+		if (object3DId != EntityManager.UNDEF_ID) {
 			String template = "select name, text from object3D where id=%d";
 			String stmt = String.format(template, object3DId);			
 			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
@@ -380,7 +380,7 @@ public class SceneEntityManager extends EntityManager {
 
 	private void deleteRiddle(Riddle riddle) throws SQLException {
 		
-		if (riddle != null && riddle.getId() != -1) {
+		if (riddle != null && riddle.getId() != EntityManager.UNDEF_ID) {
 			String template = "delete from riddle where id=%d";
 			String stmt = String.format(template, riddle.getId());
 			this.connection.executeUpdateStatement(stmt);			
@@ -393,7 +393,7 @@ public class SceneEntityManager extends EntityManager {
 		
 		Scene theScene = null;
 		
-		if (sceneId == -1)
+		if (sceneId == EntityManager.UNDEF_ID)
 			return;   // nothing to do
 		
 		try {
@@ -408,7 +408,7 @@ public class SceneEntityManager extends EntityManager {
 				this.connection.executeUpdateStatement(stmt);
 				
 				// Then delete riddle (if necessary)
-				if (theScene.getRiddle() != null && theScene.getRiddle().getId() != -1) {
+				if (theScene.getRiddle() != null && theScene.getRiddle().getId() != EntityManager.UNDEF_ID) {
 					this.deleteRiddle(theScene.getRiddle());
 				}
 			}

@@ -66,7 +66,7 @@ public class AdventureEntityManager extends EntityManager {
 			// Insert adventure into DB
 			String template = "insert into adventure (name,text) values (\"%s\",\"%s\")";
 			String name = HtmlUtils.htmlUnescape(adventure.getName());
-			String text = HtmlUtils.htmlUnescape(adventure.getText());
+			String text = this.queryfiableString(HtmlUtils.htmlUnescape(adventure.getText()));
 			String stmt = String.format(template, name, text);
 			this.connection.executeUpdateStatement(stmt);
 			
@@ -159,7 +159,7 @@ public class AdventureEntityManager extends EntityManager {
 
 			String template = "update adventure set name=\"%s\", text=\"%s\" where id=%d";
 			String name = HtmlUtils.htmlUnescape(adventure.getName());
-			String text = HtmlUtils.htmlUnescape(adventure.getText());
+			String text = this.queryfiableString(HtmlUtils.htmlUnescape(adventure.getText()));
 			Integer id  = adventure.getId();
 			String stmt = String.format(template, name, text, id);
 			
@@ -179,7 +179,7 @@ public class AdventureEntityManager extends EntityManager {
 		
 		Adventure theAdventure = null;
 		
-		if (adventureId == -1)
+		if (adventureId == EntityManager.UNDEF_ID)
 			return;   // nothing to do
 		
 		try {

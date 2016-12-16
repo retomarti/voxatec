@@ -1,7 +1,5 @@
 package com.voxatec.argame.objectModel.persistence;
 
-import java.io.UnsupportedEncodingException;
-
 import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,6 +12,7 @@ import org.springframework.web.util.HtmlUtils;
 
 import com.voxatec.argame.objectModel.beans.File;
 import com.voxatec.argame.objectModel.beans.Object3D;
+import com.voxatec.argame.objectModel.beans.Texture;
 
 
 public class Object3DEntityManager extends EntityManager {
@@ -26,19 +25,33 @@ public class Object3DEntityManager extends EntityManager {
 		try {
 			this.initConnection();
 
-			String stmt = "select * from object3D order by name";
+			String stmt = "select * from v_object3D order by obj_name";
 			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			Object3D obj3D = null;
+			Texture texture = null;
+			Vector<Texture> textureList = null;
 
 			while (resultSet.next()) {
 				// Object3D
-				obj3D = new Object3D();
-				obj3D.setId(resultSet.getInt("id"));
-				obj3D.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
-				obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
-				obj3D.setObjFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_file_name")));
-				object3DList.add(obj3D);
+				int obj3DId = resultSet.getInt("obj_id");
+				
+				if (obj3D == null || obj3DId != obj3D.getId()) {
+					obj3D = new Object3D();
+					obj3D.setId(obj3DId);
+					obj3D.setName(HtmlUtils.htmlEscape(resultSet.getString("obj_name")));
+					obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("obj_text")));
+					textureList = new Vector<Texture>();
+					obj3D.setTextureList(textureList);
+					object3DList.add(obj3D);
+				}
+				
+				// Texture
+				texture = new Texture();
+				texture.setId(resultSet.getInt("tex_id"));
+				texture.setName(resultSet.getString("tex_name"));
+				texture.setImageType(resultSet.getString("tex_type"));
+				textureList.add(texture);
 			}
 
 		} catch (SQLException exception) {
@@ -93,11 +106,12 @@ public class Object3DEntityManager extends EntityManager {
 		try {
 			this.initConnection();
 
-			// Insert adventure into DB
+			// Insert object3D into DB
 			String template = "insert into object3D (name,text) values (\"%s\",\"%s\")";
 			String name = HtmlUtils.htmlUnescape(object3D.getName());
-			String text = HtmlUtils.htmlUnescape(object3D.getText());
+			String text = this.queryfiableString(HtmlUtils.htmlUnescape(object3D.getText()));
 			String stmt = String.format(template, name, text);
+			
 			this.connection.executeUpdateStatement(stmt);
 			
 			// Retrieve auto inserted ID value
@@ -127,7 +141,7 @@ public class Object3DEntityManager extends EntityManager {
 
 			String template = "update object3D set name=\"%s\", text=\"%s\" where id=%d";
 			String name = HtmlUtils.htmlUnescape(object3D.getName());
-			String text = HtmlUtils.htmlUnescape(object3D.getText());
+			String text = this.queryfiableString(HtmlUtils.htmlUnescape(object3D.getText()));
 			Integer id  = object3D.getId();
 			String stmt = String.format(template, name, text, id);
 			
@@ -148,7 +162,7 @@ public class Object3DEntityManager extends EntityManager {
 		
 		Object3D theObject3D = null;
 		
-		if (object3DId == -1)
+		if (object3DId == EntityManager.UNDEF_ID)
 			return;   // nothing to do
 		
 		try {
@@ -157,9 +171,14 @@ public class Object3DEntityManager extends EntityManager {
 			this.initConnection();
 			
 			if (theObject3D != null) {
-				// Delete object3D
-				String template = "delete from object3D where id=%d";
+				// Delete textures
+				String template = "delete from texture where object3D_id=%d";
 				String stmt = String.format(template, object3DId);
+				this.connection.executeUpdateStatement(stmt);
+				
+				// Delete object3D
+				template = "delete from object3D where id=%d";
+				stmt = String.format(template, object3DId);
 				this.connection.executeUpdateStatement(stmt);
 			}
 		
@@ -174,103 +193,6 @@ public class Object3DEntityManager extends EntityManager {
 
 	
 	
-	// ---- Get image of object -------------------------------------------------------------------------
-	public byte[] getImage(Integer object3DId) throws SQLException {
-		byte[] imgData = "".getBytes();
-		
-		try {
-			this.initConnection();
-			
-	        String template = "select image from object3D where id=%d";
-	        String stmt = String.format(template, object3DId);
-	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
-
-			if (resultSet.next()) {
-				Blob blob = resultSet.getBlob("image");
-				if (blob != null) {
-					imgData = blob.getBytes(1, (int) blob.length());
-				}
-			}
-			
-		} catch (Exception exception) {
-			System.out.print(exception.toString());
-			throw exception;        	
-			
-		} finally {
-			this.connection.close();
-		}
-		
-		return imgData;
-	}
-	
-	
-	// ---- Update image of object -------------------------------------------------------------------------
-	public void updateImage(File imageFile, Integer object3DId) throws SQLException, UnsupportedEncodingException {
-		
-		try {
-			System.out.println(String.format("content size: %d", imageFile.getContent().length()));
-
-			this.initConnection();
-			PreparedStatement stmt = this.connection.newPreparedStatement("update object3D set image=? where id=?");
-			
-			// Decode image from Base64
-			byte[] image = null;
-			if (imageFile != null && imageFile.getContent() != null) {
-				byte[] bytes = imageFile.getContent().getBytes();
-				image = Base64.getDecoder().decode(bytes);
-			}
-			// System.out.println(String.format("decoded size: %d", decoded.length));
-			
-			// Bind statement parameters & execute
-			Blob blob = this.connection.newBlob();
-			blob.setBytes(1, image);
-			stmt.setBlob(1, blob);
-	        stmt.setInt(2, object3DId);
-	        stmt.executeUpdate();
-			
-		} catch (Exception exception) {
-			System.out.print(exception.toString());
-			throw exception;        	
-		} finally {
-			this.connection.close();
-		}
-	
-	}
-	
-	
-	// ---- Get DAT file of object group ---------------------------------------------------------------------
-	public File getDatFile(Integer cacheGroupId) throws SQLException {
-		File datFile = new File();
-		
-        try {
-			this.initConnection();
-
-	        String template = "select target_img_dat_file_name, target_img_dat_file from cache_group where id=%d";
-	        String stmt = String.format(template, cacheGroupId);
-	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
-
-			if (resultSet.next()) {
-				Blob blob = resultSet.getBlob("target_img_dat_file");
-				if (blob != null) {
-					String strContent = new String(blob.getBytes(1l, (int) blob.length()));
-					datFile.setContent(HtmlUtils.htmlEscape(strContent));
-					datFile.setMimeType("application/octet-stream");
-				}
-				datFile.setName(resultSet.getString("target_img_dat_file_name"));
-        	}
-			
-        } catch (Exception exception) {
-			System.out.print(exception.toString());
-			throw exception;        	
-			
-		} finally {
-			this.connection.close();
-		}
-		
-		return datFile;
-	}
-	
-
 	// ---- Get OBJ file of object -------------------------------------------------------------------------
 	public String getObjFile(Integer object3DId) throws SQLException {
 		String objFile = null;
@@ -388,6 +310,46 @@ public class Object3DEntityManager extends EntityManager {
 	}
 	
 	
+	// ---- Create TEX image --------------------------------------------------------------------------
+	public void createTexFile(File texFile, Integer object3DId) throws SQLException {
+		
+		if (object3DId == EntityManager.UNDEF_ID)
+			return;
+		
+		try {
+			this.initConnection();
+
+			// Insert tex-image into DB
+			PreparedStatement stmt = this.connection.newPreparedStatement(
+					"insert into texture (name,image_type,image,object3D_id) values (?,?,?,?)");
+			String name = HtmlUtils.htmlUnescape(texFile.getName());
+			String imageType = HtmlUtils.htmlUnescape(texFile.getMimeType());
+			Blob blob = this.connection.newBlob();
+			byte[] image = null;
+			if (texFile != null && texFile.getContent() != null) {
+				byte[] bytes = texFile.getContent().getBytes();
+				image = Base64.getDecoder().decode(bytes);
+				blob.setBytes(1, image);
+			}
+			
+			// Bind statement parameters & execute
+			stmt.setString(1, name);
+			stmt.setString(2, imageType);
+			stmt.setBlob(3, blob);
+	        stmt.setInt(4, object3DId);
+	        stmt.executeUpdate();
+			
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+		
+	}
+	
+
 	// ---- Get TEX file of object -------------------------------------------------------------------------
 	public byte[] getTexFile(Integer object3DId, String texFileName) throws SQLException {
 		byte[] imgData = "".getBytes();
@@ -395,11 +357,10 @@ public class Object3DEntityManager extends EntityManager {
 		try {
 			this.initConnection();
 			
-			PreparedStatement stmt = this.connection.newPreparedStatement("select image from texture where object3D_id=? and name like ?");
-
-	        stmt.setInt(1, object3DId);
-	        stmt.setString(2, texFileName + "%");
-	        ResultSet resultSet = stmt.executeQuery();
+			// suffix of image name is suppressed by spring -> name == <texFileName> + ('.jpg' || '.png' || '.XXX')
+			String template = "select image from texture where object3D_id=%d and (name=\"" + texFileName + "\" or name like \"" + texFileName + ".%s\")";
+			String stmt = String.format(template, object3DId, "%");
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("image");
@@ -447,6 +408,30 @@ public class Object3DEntityManager extends EntityManager {
 		} catch (Exception exception) {
 			System.out.print(exception.toString());
 			throw exception;        	
+		} finally {
+			this.connection.close();
+		}
+	}
+
+	
+	// ---- Delete TEX file of object -----------------------------------------------------------------
+	public void deleteTexFile(String texFileName, Integer object3DId) throws SQLException {
+		
+		if (object3DId == EntityManager.UNDEF_ID)
+			return;   // nothing to do
+		
+		try {
+			this.initConnection();
+			
+			// Delete textures
+			String template = "delete from texture where object3D_id=%d and (name=\"" + texFileName + "\" or name like \"" + texFileName + ".%s\")";
+			String stmt = String.format(template, object3DId, "%");
+			this.connection.executeSelectStatement(stmt);
+		
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
 		} finally {
 			this.connection.close();
 		}
