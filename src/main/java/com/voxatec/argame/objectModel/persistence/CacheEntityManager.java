@@ -102,7 +102,7 @@ public class CacheEntityManager extends EntityManager {
 			this.initConnection();
 
 			// Insert cacheGroup into DB
-			String template = "insert into cache_group (city_id,name) values (%d,\"%s\",\"%s\")";
+			String template = "insert into cache_group (city_id,name,text) values (%d,\"%s\",\"%s\")";
 			Integer cityId = cacheGroup.getCityId();
 			String name = HtmlUtils.htmlUnescape(cacheGroup.getName());
 			String text = this.queryfiableString(HtmlUtils.htmlUnescape(cacheGroup.getText()));
