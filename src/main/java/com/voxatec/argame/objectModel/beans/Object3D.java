@@ -11,7 +11,7 @@ public class Object3D extends NamedObject {
 
 	// attributes
 	private String objFileName;
-	private Material material;
+	private String mtlFileName;
 	private Vector<Texture> textureList;
 
     // accessors
@@ -23,12 +23,12 @@ public class Object3D extends NamedObject {
 		this.objFileName = objFileName;
 	}
 	
-    public Material getMaterial() {
-		return material;
+	public String getMtlFileName() {
+		return mtlFileName;
 	}
-
-	public void setMaterial(Material material) {
-		this.material = material;
+	
+	public void setMtlFileName(String mtlFileName) {
+		this.mtlFileName = mtlFileName;
 	}
 	
 	public void setTextureList(Vector<Texture> textureList) {

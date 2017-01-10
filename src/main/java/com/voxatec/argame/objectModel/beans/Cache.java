@@ -8,6 +8,7 @@ public class Cache extends NamedObject {
 	// attributes
 	private int cacheGroupId;
 	private String street;
+	private String targetImageName;
 	private String targetImageFileName;
 	private BigDecimal gpsLatitude;
 	private BigDecimal gpsLongitude;
@@ -27,6 +28,14 @@ public class Cache extends NamedObject {
 
 	public void setStreet(String aStreet) {
 		street = aStreet;
+	}
+	
+	public String getTargetImageName() {
+		return targetImageName;
+	}
+	
+	public void setTargetImageName(String targetImgName) {
+		this.targetImageName = targetImgName;
 	}
 	
 	public String getTargetImageFileName() {

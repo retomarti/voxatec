@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.springframework.web.util.HtmlUtils;
 
 import com.voxatec.argame.objectModel.beans.Adventure;
+import com.voxatec.argame.objectModel.beans.Cache;
 import com.voxatec.argame.objectModel.beans.Object3D;
 import com.voxatec.argame.objectModel.beans.Riddle;
 import com.voxatec.argame.objectModel.beans.Scene;

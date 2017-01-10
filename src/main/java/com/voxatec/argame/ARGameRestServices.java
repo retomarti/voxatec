@@ -340,6 +340,34 @@ public class ARGameRestServices {
     }
 	
 	
+	//------------------ Get nearby Adventure Caches ----------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/adventure-caches", method = RequestMethod.GET)
+    public Vector<Adventure> getNearbyAdventureCaches() throws ObjectNotFoundException {
+    	
+    	Vector<Adventure> adventureList = null;
+    	String errorMsg = "";
+    	
+    	try {
+    		this.logRequest("GET request for nearby adventure caches");
+    		CacheEntityManager entityMgr = new CacheEntityManager();
+    		adventureList = entityMgr.getNearbyAdventureCaches();
+    	}
+    	catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		adventureList = null;
+    	}
+    		
+    	if (adventureList == null) {
+    		// Objects not found in database
+            throw new ObjectNotFoundException("adventures", errorMsg);
+    	}
+    			
+    	return adventureList;
+    }
+	
+	
     //------------------ Create a Scene -----------------------------------------------------------	
 	@CrossOrigin
 	@RequestMapping(value = "/scenes", method = RequestMethod.POST)
@@ -461,6 +489,34 @@ public class ARGameRestServices {
     	}
     			
     	return object3DList;
+    }
+	
+	
+	//------------------ Get one Objects3D -------------------------------------------------------	
+	@CrossOrigin
+    @RequestMapping(value = "/objects3D/{object3D_id}", method = RequestMethod.GET)
+    public Object3D getObject3DById(@PathVariable Integer object3D_id) throws ObjectNotFoundException {
+    	
+    	Object3D object3D = null;
+    	String errorMsg = "";
+    	
+    	try {
+    		this.logRequest("GET request for one objects3D");
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		object3D = entityMgr.getObject3DById(object3D_id);
+    	}
+    	catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		object3D = null;
+    	}
+    		
+    	if (object3D == null) {
+    		// Objects not found in database
+            throw new ObjectNotFoundException("objects3D", errorMsg);
+    	}
+    			
+    	return object3D;
     }
 	
 	

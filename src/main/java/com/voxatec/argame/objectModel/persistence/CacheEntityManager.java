@@ -13,7 +13,11 @@ import org.springframework.web.util.HtmlUtils;
 
 import com.voxatec.argame.objectModel.beans.City;
 import com.voxatec.argame.objectModel.beans.File;
+import com.voxatec.argame.objectModel.beans.Object3D;
+import com.voxatec.argame.objectModel.beans.Scene;
+import com.voxatec.argame.objectModel.beans.Story;
 import com.voxatec.argame.objectModel.beans.CacheGroup;
+import com.voxatec.argame.objectModel.beans.Adventure;
 import com.voxatec.argame.objectModel.beans.Cache;
 
 
@@ -89,6 +93,111 @@ public class CacheEntityManager extends EntityManager {
 		}
 
 		return cityList;
+	}
+	
+	
+	// ---- Get nearby adventure caches -----------------------------------------------------------------------
+	public Vector<Adventure> getNearbyAdventureCaches() throws SQLException {
+
+		Vector<Adventure> adventureList = new Vector<Adventure>();
+		Vector<Story> storyList = null;
+		Vector<Scene> sceneList = null;
+
+		try {
+			this.initConnection();
+
+			String stmt = "select * from v_adventure_cache";
+			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			Adventure adventure = null;
+			Story story = null;
+			CacheGroup cacheGroup = null;
+			Scene scene = null;
+			Object3D obj3D = null;
+			Cache cache = null;
+
+			while (resultSet.next()) {
+				// Adventure
+				int adventureId = resultSet.getInt("adv_id");
+				if (adventure == null || adventureId != adventure.getId()) {
+					adventure = new Adventure();
+					adventure.setId(resultSet.getInt("adv_id"));
+					adventure.setName(HtmlUtils.htmlEscape(resultSet.getString("adv_name")));
+					adventure.setText(HtmlUtils.htmlEscape(resultSet.getString("adv_text")));
+					storyList = new Vector<Story>();
+					adventure.setStoryList(storyList);
+					adventureList.add(adventure);
+				}
+
+				// Story
+				int storyId = resultSet.getInt("sto_id");
+				if (!resultSet.wasNull() && (story == null || storyId != story.getId())) {
+					story = new Story();
+					story.setId(storyId);
+					story.setAdventureId(adventureId);
+					story.setSeqNr(resultSet.getInt("sto_seq_nr"));
+					story.setName(HtmlUtils.htmlEscape(resultSet.getString("sto_name")));
+					story.setText(HtmlUtils.htmlEscape(resultSet.getString("sto_text")));
+					sceneList = new Vector<Scene>();
+					story.setSceneList(sceneList);
+					storyList.add(story);
+				}
+				
+				// CacheGroup
+				int cacheGroupId = resultSet.getInt("cag_id");
+				if (!resultSet.wasNull() && (cacheGroup == null || cacheGroupId != cacheGroup.getId())) {
+					cacheGroup = new CacheGroup();
+					cacheGroup.setId(cacheGroupId);
+					cacheGroup.setName(HtmlUtils.htmlEscape(resultSet.getString("cag_name")));
+					cacheGroup.setText(HtmlUtils.htmlEscape(resultSet.getString("cag_text")));
+				}
+				
+				// Scene
+				int sceneId = resultSet.getInt("sce_id");
+				if (!resultSet.wasNull()) {
+					scene = new Scene();
+					scene.setId(sceneId);
+					scene.setSeqNr(resultSet.getInt("sce_seq_nr"));
+					scene.setName(resultSet.getString("sce_name"));
+					scene.setText(HtmlUtils.htmlEscape(resultSet.getString("sce_text")));
+					sceneList.add(scene);
+					
+					// Object3D
+					int obj3DId = resultSet.getInt("obj_id");
+					if (!resultSet.wasNull()) {
+						obj3D = new Object3D();
+						obj3D.setId(obj3DId);
+						obj3D.setName(HtmlUtils.htmlEscape(resultSet.getString("obj_name")));
+						obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("obj_text")));
+						scene.setObject3D(obj3D);
+					}
+					
+					// Cache
+					int cacheId = resultSet.getInt("cah_id");
+					if (!resultSet.wasNull()) {
+						cache = new Cache();
+						cache.setId(cacheId);
+						cache.setName(HtmlUtils.htmlEscape(resultSet.getString("cah_name")));
+						cache.setText(HtmlUtils.htmlEscape(resultSet.getString("cah_text")));
+						cache.setStreet(HtmlUtils.htmlEscape(resultSet.getString("cah_street")));
+						cache.setGpsLatitude(resultSet.getBigDecimal("cah_gps_lat"));
+						cache.setGpsLongitude(resultSet.getBigDecimal("cah_gps_long"));
+						cache.setTargetImageName(HtmlUtils.htmlEscape(resultSet.getString("cah_target_img_name")));
+						cache.setCacheGroupId(cacheGroupId);
+						scene.setCache(cache);
+					}
+				}
+			}
+
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+
+		return adventureList;
 	}
 	
 	

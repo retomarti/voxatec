@@ -41,17 +41,23 @@ public class Object3DEntityManager extends EntityManager {
 					obj3D.setId(obj3DId);
 					obj3D.setName(HtmlUtils.htmlEscape(resultSet.getString("obj_name")));
 					obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("obj_text")));
+					obj3D.setObjFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_obj_file_name")));
+					obj3D.setMtlFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_mtl_file_name")));
 					textureList = new Vector<Texture>();
 					obj3D.setTextureList(textureList);
 					object3DList.add(obj3D);
 				}
 				
 				// Texture
-				texture = new Texture();
-				texture.setId(resultSet.getInt("tex_id"));
-				texture.setName(resultSet.getString("tex_name"));
-				texture.setImageType(resultSet.getString("tex_type"));
-				textureList.add(texture);
+				int textureId = resultSet.getInt("tex_id");
+				
+				if (!resultSet.wasNull()) {
+					texture = new Texture();
+					texture.setId(textureId);
+					texture.setName(resultSet.getString("tex_name"));
+					texture.setImageType(resultSet.getString("tex_type"));
+					textureList.add(texture);
+				}
 			}
 
 		} catch (SQLException exception) {
@@ -68,21 +74,42 @@ public class Object3DEntityManager extends EntityManager {
 	
 	// ---- Get one object by Id -------------------------------------------------------------------------	
 	public Object3D getObject3DById(Integer object3DId) throws SQLException {
-		Object3D theObject3D = null;
+		Object3D obj3D = null;
+		Texture texture = null;
+		Vector<Texture> textureList = null;
 		
 		try {
 			this.initConnection();
 
-			String template = "select * from object3D where id=%d";
+			String template = "select * from v_object3D where obj_id=%d";
 			String stmt = String.format(template, object3DId);
 			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			while (resultSet.next()) {
-				// Adventure
-				theObject3D = new Object3D();
-				theObject3D.setId(object3DId);
-				theObject3D.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
-				theObject3D.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
+				// Object3D
+				int obj3DId = resultSet.getInt("obj_id");
+				
+				if (obj3D == null || obj3DId != obj3D.getId()) {
+					obj3D = new Object3D();
+					obj3D.setId(obj3DId);
+					obj3D.setName(HtmlUtils.htmlEscape(resultSet.getString("obj_name")));
+					obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("obj_text")));
+					obj3D.setObjFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_obj_file_name")));
+					obj3D.setMtlFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_mtl_file_name")));
+					textureList = new Vector<Texture>();
+					obj3D.setTextureList(textureList);
+				}
+				
+				// Texture
+				int textureId = resultSet.getInt("tex_id");
+				
+				if (!resultSet.wasNull()) {
+					texture = new Texture();
+					texture.setId(textureId);
+					texture.setName(resultSet.getString("tex_name"));
+					texture.setImageType(resultSet.getString("tex_type"));
+					textureList.add(texture);
+				}
 			}
 
 		} catch (SQLException exception) {
@@ -93,7 +120,7 @@ public class Object3DEntityManager extends EntityManager {
 			this.connection.close();
 		}
 
-		return theObject3D;
+		return obj3D;
 	}
 	
 
