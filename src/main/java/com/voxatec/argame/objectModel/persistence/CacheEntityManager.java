@@ -323,8 +323,8 @@ public class CacheEntityManager extends EntityManager {
 	
 	
 	// ---- Get XML file of a cache-group ---------------------------------------------------------------------
-	public File getXmlFile(Integer cacheGroupId) throws SQLException {
-		File xmlFile = new File();
+	public String getXmlFile(Integer cacheGroupId) throws SQLException {
+		String xmlFile = null;
 		
         try {
 			this.initConnection();
@@ -336,11 +336,8 @@ public class CacheEntityManager extends EntityManager {
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("target_img_xml_file");
 				if (blob != null) {
-					String strContent = new String(blob.getBytes(1l, (int) blob.length()));
-					xmlFile.setContent(HtmlUtils.htmlEscape(strContent));
-					xmlFile.setMimeType("application/octet-stream");
+					xmlFile = new String(blob.getBytes(1l, (int) blob.length()));
 				}
-				xmlFile.setName(resultSet.getString("target_img_xml_file_name"));
         	}
 			
         } catch (Exception exception) {
@@ -384,6 +381,35 @@ public class CacheEntityManager extends EntityManager {
 	
 	
 	// ---- Get DAT file of object group ---------------------------------------------------------------------
+	public byte[] getDatFile(Integer cacheGroupId) throws SQLException {
+		byte[] datFile = "".getBytes();
+		
+        try {
+			this.initConnection();
+
+	        String template = "select target_img_dat_file_name, target_img_dat_file from cache_group where id=%d";
+	        String stmt = String.format(template, cacheGroupId);
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			if (resultSet.next()) {
+				Blob blob = resultSet.getBlob("target_img_dat_file");
+				if (blob != null) {
+					datFile = blob.getBytes(1, (int) blob.length());
+				}
+			}
+			
+        } catch (Exception exception) {
+			System.out.print(exception.toString());
+			throw exception;        	
+			
+		} finally {
+			this.connection.close();
+		}
+		
+		return datFile;
+	}
+
+	/*
 	public File getDatFile(Integer cacheGroupId) throws SQLException {
 		File datFile = new File();
 		
@@ -398,7 +424,7 @@ public class CacheEntityManager extends EntityManager {
 				Blob blob = resultSet.getBlob("target_img_dat_file");
 				if (blob != null) {
 					String strContent = new String(blob.getBytes(1l, (int) blob.length()));
-					datFile.setContent(HtmlUtils.htmlEscape(strContent));
+					datFile.setContent(strContent);
 					datFile.setMimeType("application/octet-stream");
 				}
 				datFile.setName(resultSet.getString("target_img_dat_file_name"));
@@ -414,7 +440,7 @@ public class CacheEntityManager extends EntityManager {
 		
 		return datFile;
 	}
-
+*/
 	
 	// ---- Update DAT file of a cache-group ----------------------------------------------------------------------
 	public void updateDatFile(File datFile, Integer cacheGroupId) throws SQLException {

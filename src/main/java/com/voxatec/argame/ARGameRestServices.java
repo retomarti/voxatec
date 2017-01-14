@@ -965,7 +965,7 @@ public class ARGameRestServices {
 	
     //------------------ Get Target Image file of a cache -------------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/target-img/{cache_id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/files/target-img/{cache_id}", method = RequestMethod.GET, produces = "image/*")
     public byte[] getCacheTargetImageFile(@PathVariable Integer cache_id) throws ObjectNotFoundException {
     	
     	byte[] imgData = null;
@@ -1012,10 +1012,10 @@ public class ARGameRestServices {
 
     //------------------ Get Target Image XML file of a cache-group ---------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/target-xml/{cache_group_id}", method = RequestMethod.GET)
-    public File getCacheGroupXmlFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/target-xml/{cache_group_id}", method = RequestMethod.GET, produces = "text/xml")
+    public String getCacheGroupXmlFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
     	
-    	File xmlFile = null;
+		String xmlFile = null;
     	String errorMsg = "";
 
     	try {
@@ -1059,10 +1059,10 @@ public class ARGameRestServices {
 	
     //------------------ Get Target Image DAT file of a cache-group ---------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/files/target-dat/{cache_group_id}", method = RequestMethod.GET)
-    public File getCacheGroupDatFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/target-dat/{cache_group_id}", method = RequestMethod.GET, produces = "application/octet-stream")
+    public byte[] getCacheGroupDatFile(@PathVariable Integer cache_group_id) throws ObjectNotFoundException {
     	
-    	File datFile = null;
+    	byte[] datFile = null;
     	String errorMsg = "";
 
     	try {
