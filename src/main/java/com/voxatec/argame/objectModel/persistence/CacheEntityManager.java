@@ -1,18 +1,28 @@
 package com.voxatec.argame.objectModel.persistence;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.net.URISyntaxException;
 import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.Vector;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 import org.springframework.web.util.HtmlUtils;
 
 import com.voxatec.argame.objectModel.beans.City;
 import com.voxatec.argame.objectModel.beans.File;
+import com.voxatec.argame.objectModel.beans.ImageFile;
 import com.voxatec.argame.objectModel.beans.Object3D;
 import com.voxatec.argame.objectModel.beans.Scene;
 import com.voxatec.argame.objectModel.beans.Story;
@@ -627,23 +637,35 @@ public class CacheEntityManager extends EntityManager {
 	}
 	
 	// ---- Get target image of cache --------------------------------------------------------------------
-	public byte[] getTargetImageFile(Integer cacheId) throws SQLException {
-		byte[] imgData = "".getBytes();
+	public ImageFile getTargetImageFile(Integer cacheId) throws Exception {
+		ImageFile imageFile = null;
+		byte[] imageData = "".getBytes();
+		String imageType = "*";
 		
 		try {
 			this.initConnection();
 			
-	        String template = "select target_img_file from cache where id=%d";
+	        String template = "select target_img_file, target_img_file_type from cache where id=%d";
 	        String stmt = String.format(template, cacheId);
 	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
 			if (resultSet.next()) {
 				Blob blob = resultSet.getBlob("target_img_file");
 				if (blob != null) {
-					imgData = blob.getBytes(1, (int) blob.length());
+					imageData = blob.getBytes(1, (int) blob.length());
+					imageType = resultSet.getString("target_img_file_type");
+					
+					System.out.println(String.format("getTargetImageFile: img-length: %s, img-type: %s", 
+													 imageData.length,
+													 imageType));
+
 				}
 			}
 			
+			imageFile = new ImageFile();
+			imageFile.setData(imageData);
+			imageFile.setMimeType(imageType);
+						
 		} catch (Exception exception) {
 			System.out.print(exception.toString());
 			throw exception;        	
@@ -652,18 +674,33 @@ public class CacheEntityManager extends EntityManager {
 			this.connection.close();
 		}
 		
-		return imgData;
+		return imageFile;
 	}
 	
 	
 	// ---- Update target image of cache -------------------------------------------------------------------
-	public void updateTargetImageFile(File imageFile, Integer cacheId) throws SQLException, UnsupportedEncodingException {
+
+	public String getImageFileExtention(ImageInputStream imageInputStream) throws URISyntaxException, IOException{
+	    try{
+	        Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
+	        ImageReader reader = iter.next();
+	        String formatName = reader.getFormatName();
+	        
+	        return formatName;
+	    }catch(Exception e){
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	
+	public void updateTargetImageFile(File imageFile, Integer cacheId) 
+		throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
 		
 		try {
 			System.out.println(String.format("content size: %d", imageFile.getContent().length()));
 
 			this.initConnection();
-			PreparedStatement stmt = this.connection.newPreparedStatement("update cache set target_img_file=?, target_img_file_name=? where id=?");
+			PreparedStatement stmt = this.connection.newPreparedStatement("update cache set target_img_file=?, target_img_file_name=?, target_img_file_type=? where id=?");
 			
 			// Decode image from Base64
 			byte[] image = null;
@@ -673,14 +710,22 @@ public class CacheEntityManager extends EntityManager {
 			}
 			
 			// Bind statement parameters & execute
+			ByteArrayInputStream byteInputStream = new ByteArrayInputStream(image);
+			ImageInputStream imageInputStream = ImageIO.createImageInputStream(byteInputStream);
+			
+			String imageFileType = this.getImageFileExtention(imageInputStream);
 			String imageFileName = HtmlUtils.htmlUnescape(imageFile.getName());
 			Blob blob = this.connection.newBlob();
 			blob.setBytes(1, image);
 			stmt.setBlob(1, blob);
 			stmt.setString(2, imageFileName);
-	        stmt.setInt(3, cacheId);
+			stmt.setString(3, imageFileType);
+	        stmt.setInt(4, cacheId);
 	        stmt.executeUpdate();
 			
+	        byteInputStream.close();
+	        imageInputStream.close();
+	        
 		} catch (Exception exception) {
 			System.out.print(exception.toString());
 			throw exception;        	

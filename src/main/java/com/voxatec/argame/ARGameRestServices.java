@@ -2,6 +2,8 @@ package com.voxatec.argame;
 
 import java.util.*;
 
+import javax.sound.sampled.AudioFormat.Encoding;
+
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -10,7 +12,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.voxatec.argame.objectModel.beans.*;
 import com.voxatec.argame.objectModel.persistence.AdventureEntityManager;
@@ -966,28 +971,34 @@ public class ARGameRestServices {
     //------------------ Get Target Image file of a cache -------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/files/target-img/{cache_id}", method = RequestMethod.GET, produces = "image/*")
-    public byte[] getCacheTargetImageFile(@PathVariable Integer cache_id) throws ObjectNotFoundException {
+    public ResponseEntity<byte[]> getCacheTargetImageFile(@PathVariable Integer cache_id) throws ObjectNotFoundException {
     	
-    	byte[] imgData = null;
+    	ImageFile imageFile = null;
+    	byte[] imageData = null;
     	String errorMsg = "";
 
     	try {
     		this.logRequest(String.format("GET request for target image file of a cache with id=%s", cache_id));
     		CacheEntityManager entityMgr = new CacheEntityManager();
-    		imgData = entityMgr.getTargetImageFile(cache_id);
+    		imageFile = entityMgr.getTargetImageFile(cache_id);
     			
     	} catch (Exception exception) {
     		System.out.println(exception.getMessage());
     		errorMsg = exception.getMessage();
-    		imgData = null;
+    		imageFile = null;
     	}
     		
-    	if (imgData == null) {
+    	if (imageFile == null) {
     		// Target image file not found in database
             throw new ObjectNotFoundException("files/target-img", cache_id, errorMsg);
     	}
-    			
-    	return imgData;
+    	
+    	// Decode imageFile content first    	
+    	return
+    			ResponseEntity.ok()
+                .contentLength(imageFile.getData().length)
+                .contentType(new MediaType("image", imageFile.getMimeType()))
+                .body(imageFile.getData());
     }
 	
 	
