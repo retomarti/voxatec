@@ -507,14 +507,15 @@ public class CacheEntityManager extends EntityManager {
 			this.initConnection();
 
 			// Insert cacheGroup into DB
-			String template = "insert into cache (cache_grp_id,name,text,street,gps_lat,gps_long) values (%d,\"%s\",\"%s\",\"%s\",%f,%f)";
+			String template = "insert into cache (cache_grp_id,name,target_img_name,text,street,gps_lat,gps_long) values (%d,\"%s\",\"%s\",\"%s\",%f,%f)";
 			Integer cacheGroupId = cache.getCacheGroupId();
 			String name = HtmlUtils.htmlUnescape(cache.getName());
+			String targetImageName = HtmlUtils.htmlUnescape(cache.getTargetImageName());
 			String text = this.queryfiableString(HtmlUtils.htmlUnescape(cache.getText()));
 			String street = HtmlUtils.htmlUnescape(cache.getStreet());
 			BigDecimal gpsLat = cache.getGpsLatitude();
 			BigDecimal gpsLong = cache.getGpsLongitude();
-			String stmt = String.format(template, cacheGroupId, name, text, street, gpsLat, gpsLong);
+			String stmt = String.format(template, cacheGroupId, name, targetImageName, text, street, gpsLat, gpsLong);
 			this.connection.executeUpdateStatement(stmt);
 			
 			// Retrieve auto inserted ID value
@@ -542,14 +543,15 @@ public class CacheEntityManager extends EntityManager {
 		try {
 			this.initConnection();
 
-			String template = "update cache set name=\"%s\", text=\"%s\", street=\"%s\", gps_lat=%f, gps_long=%f where id=%d";
+			String template = "update cache set name=\"%s\", target_img_name=\"%s\", text=\"%s\", street=\"%s\", gps_lat=%f, gps_long=%f where id=%d";
 			String name = HtmlUtils.htmlUnescape(cache.getName());
+			String targetImgName = HtmlUtils.htmlUnescape(cache.getTargetImageName());
 			String text = this.queryfiableString(HtmlUtils.htmlUnescape(cache.getText()));
 			String street = HtmlUtils.htmlUnescape(cache.getStreet());
 			BigDecimal gpsLat = cache.getGpsLatitude();
 			BigDecimal gpsLong = cache.getGpsLongitude();
 			Integer id  = cache.getId();
-			String stmt = String.format(template, name, text, street, gpsLat, gpsLong, id);
+			String stmt = String.format(template, name, targetImgName, text, street, gpsLat, gpsLong, id);
 			
 			
 			this.connection.executeUpdateStatement(stmt);
@@ -581,6 +583,7 @@ public class CacheEntityManager extends EntityManager {
 				theCache = new Cache();
 				theCache.setId(cacheId);
 				theCache.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
+				theCache.setTargetImageName(HtmlUtils.htmlEscape(resultSet.getString("target_img_name")));
 				theCache.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
 				theCache.setStreet(HtmlUtils.htmlEscape(resultSet.getString("street")));
 				theCache.setGpsLatitude(resultSet.getBigDecimal("gps_lat"));
@@ -667,64 +670,6 @@ public class CacheEntityManager extends EntityManager {
 	
 	
 	// ---- Update target image of cache -------------------------------------------------------------------
-
-	public String getImageFileExtention(ImageInputStream imageInputStream) throws URISyntaxException, IOException{
-	    try{
-	        Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
-	        ImageReader reader = iter.next();
-	        String formatName = reader.getFormatName();
-	        
-	        return formatName;
-	    }catch(Exception e){
-	        e.printStackTrace();
-	    }
-	    return null;
-	}
-	
-	/*
-	public void updateTargetImageFile(File imageFile, Integer cacheId) 
-		throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
-		
-		try {
-			System.out.println(String.format("content size: %d", imageFile.getContent().length()));
-
-			this.initConnection();
-			PreparedStatement stmt = this.connection.newPreparedStatement("update cache set target_img_file=?, target_img_file_name=?, target_img_file_type=? where id=?");
-			
-			// Decode image from Base64
-			byte[] image = null;
-			if (imageFile != null && imageFile.getContent() != null) {
-				byte[] bytes = imageFile.getContent().getBytes();
-				image = Base64.getDecoder().decode(bytes);
-			}
-			
-			// Bind statement parameters & execute
-			ByteArrayInputStream byteInputStream = new ByteArrayInputStream(image);
-			ImageInputStream imageInputStream = ImageIO.createImageInputStream(byteInputStream);
-			
-			String imageFileType = this.getImageFileExtention(imageInputStream);
-			String imageFileName = HtmlUtils.htmlUnescape(imageFile.getName());
-			Blob blob = this.connection.newBlob();
-			blob.setBytes(1, image);
-			stmt.setBlob(1, blob);
-			stmt.setString(2, imageFileName);
-			stmt.setString(3, imageFileType);
-	        stmt.setInt(4, cacheId);
-	        stmt.executeUpdate();
-			
-	        byteInputStream.close();
-	        imageInputStream.close();
-	        
-		} catch (Exception exception) {
-			System.out.print(exception.toString());
-			throw exception;        	
-		} finally {
-			this.connection.close();
-		}
-	
-	}
-	 */
-	
 	public void updateTargetImageFile(File imageFile, Integer cacheId) 
 			throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
 		

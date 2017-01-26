@@ -377,40 +377,8 @@ public class Object3DEntityManager extends EntityManager {
 		} finally {
 			this.connection.close();
 		}
-		
 	}
 	
-/*
-	// ---- Get TEX file of object -------------------------------------------------------------------------
-	public byte[] getTexFile(Integer object3DId, String texFileName) throws SQLException {
-		byte[] imgData = "".getBytes();
-		
-		try {
-			this.initConnection();
-			
-			// suffix of image name is suppressed by spring -> name == <texFileName> + ('.jpg' || '.png' || '.XXX')
-			String template = "select image from texture where object3D_id=%d and (name=\"" + texFileName + "\" or name like \"" + texFileName + ".%s\")";
-			String stmt = String.format(template, object3DId, "%");
-			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
-
-			if (resultSet.next()) {
-				Blob blob = resultSet.getBlob("image");
-				if (blob != null) {
-					imgData = blob.getBytes(1, (int) blob.length());
-				}
-			}
-			
-		} catch (Exception exception) {
-			System.out.print(exception.toString());
-			throw exception;        	
-			
-		} finally {
-			this.connection.close();
-		}
-		
-		return imgData;
-	}
-*/	
 	
 	// ---- Get Texture image file of object3D ---------------------------------------------------------------
 	public ImageFile getTextureFile(Integer object3DId, String texFileName) throws Exception {
