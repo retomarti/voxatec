@@ -974,7 +974,6 @@ public class ARGameRestServices {
     public ResponseEntity<byte[]> getCacheTargetImageFile(@PathVariable Integer cache_id) throws ObjectNotFoundException {
     	
     	ImageFile imageFile = null;
-    	byte[] imageData = null;
     	String errorMsg = "";
 
     	try {
@@ -997,7 +996,7 @@ public class ARGameRestServices {
     	return
     			ResponseEntity.ok()
                 .contentLength(imageFile.getData().length)
-                .contentType(new MediaType("image", imageFile.getMimeType()))
+                .contentType(new MediaType("image", imageFile.getType()))
                 .body(imageFile.getData());
     }
 	
@@ -1229,27 +1228,60 @@ public class ARGameRestServices {
 	
 	
     //------------------ Get TEX image file of an Object3D ------------------------------------------------------	
+	
 	@CrossOrigin
-	@ResponseBody
-    @RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.GET, produces = "image/*")
-    public byte[] getObject3DTexImage(@PathVariable ("object3D_id") Integer object3D_id,
-    								  @PathVariable ("image_name") String image_name) throws ObjectNotFoundException {
+    @RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> getObject3DTexImage(@PathVariable ("object3D_id") Integer object3D_id,
+			  										  @PathVariable ("image_name") String texture_name) throws ObjectNotFoundException {
     	
-    	byte[] imgData = "".getBytes();
+    	ImageFile imageFile = null;
+    	String errorMsg = "";
 
     	try {
-    		this.logRequest(String.format("GET request for texture of object3D with id=%d and name=%s", object3D_id, image_name));
+    		this.logRequest(String.format("GET request for texture image file of an object3D with id=%s", object3D_id));
     		Object3DEntityManager entityMgr = new Object3DEntityManager();
-    		imgData = entityMgr.getTexFile(object3D_id, image_name);
+    		imageFile = entityMgr.getTextureFile(object3D_id, texture_name);
     			
     	} catch (Exception exception) {
     		System.out.println(exception.getMessage());
+    		errorMsg = exception.getMessage();
+    		imageFile = null;
     	}
-    		    			
-    	return imgData;    
+    		
+    	if (imageFile == null) {
+    		// Texture image file not found in database
+            throw new ObjectNotFoundException("texture", object3D_id, errorMsg);
+    	}
+    	
+    	// Decode imageFile content first    	
+    	return
+    			ResponseEntity.ok()
+                .contentLength(imageFile.getData().length)
+                .contentType(new MediaType("image", imageFile.getType()))
+                .body(imageFile.getData());
     }
 
+
+    //------------------ Update TEX image file of an Object3D ------------------------------------------------------	
 	
+	@CrossOrigin
+    @RequestMapping(value = "/files/mtl/{object3D_id}/{texture_id}", method = RequestMethod.PUT)
+    public void putObject3DTexImage(@PathVariable Integer object3D_id,
+    								@PathVariable Integer texture_id,
+    							    @RequestBody File targetImgFile) throws ObjectNotFoundException {
+    	
+    	try {
+    		this.logRequest(String.format("PUT request for texture image file of texture with id=%d", texture_id));
+    		
+    		Object3DEntityManager entityMgr = new Object3DEntityManager();
+    		entityMgr.updateTextureFile(targetImgFile, texture_id);
+    			
+    	} catch (Exception exception) {
+    		System.out.println(exception.getMessage());
+    	}			
+    }
+
+    
     //------------------ Delete TEX image file of Object3D ------------------------------------------------------	
 	@CrossOrigin
 	@RequestMapping(value = "/files/mtl/{object3D_id}/{image_name}", method = RequestMethod.DELETE)
@@ -1265,7 +1297,7 @@ public class ARGameRestServices {
 			theObject3D = entityMgr.getObject3DById(object3D_id);
 
     		if (theObject3D != null) {
-    			entityMgr.deleteTexFile(image_name, object3D_id);
+    			entityMgr.deleteTextureFile(image_name, object3D_id);
     		}
 		}
 		catch (Exception exception) {

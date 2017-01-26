@@ -5,16 +5,16 @@ import com.voxatec.argame.objectModel.beans.NamedObject;
 public class File extends NamedObject {
 
 	// attributes
-	private String mimeType;
+	private String type;
 	private String content;
 
 	// methods
-	public String getMimeType() {
-		return mimeType;
+	public String getType() {
+		return type;
 	}
 	
-	public void setMimeType(String aMimeType) {
-		mimeType = aMimeType;
+	public void setType(String aType) {
+		type = aType;
 	}
 		
 	public String getContent() {

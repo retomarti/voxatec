@@ -1,13 +1,27 @@
 package com.voxatec.argame.objectModel.persistence;
 
 import com.voxatec.argame.objectModel.mysql.*;
+import com.voxatec.argame.objectModel.beans.File;
+import com.voxatec.argame.objectModel.beans.ImageFile;
 import com.voxatec.argame.objectModel.beans.Object;
 import com.voxatec.argame.util.EntityMappingFileReader;
 import com.voxatec.argame.util.PropertyFileReader;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.sql.Blob;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+
+import org.springframework.web.util.HtmlUtils;
 
 
 /**
@@ -84,7 +98,236 @@ public class EntityManager {
 	}
 
 	
-    // Bean Persistency ----------------------------------------------------------------------------
+    // Image Persistency ----------------------------------------------------------------------------
+
+	// GET-ImageFile by beanId
+	protected ImageFile getImageFileByBeanId(String table, 
+			                                 String imgColumn, String imgTypeColumn, String imgNameColumn,
+			                                 int beanId) throws Exception {
+		ImageFile imageFile = null;
+		byte[] imageData = "".getBytes();
+		String imageType = "";
+		String imageName = "";
+		
+		try {
+			this.initConnection();
+			
+			// Statement:
+			// select <image>, <image.type>, <image.name> from <table> where id=<beanId>
+			
+	        String template = "select %s, %s, %s from %s where id=%d";
+	        String stmt = String.format(template, imgColumn, imgTypeColumn, imgNameColumn, table, beanId);
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			if (resultSet.next()) {
+				Blob blob = resultSet.getBlob(imgColumn);
+				if (blob != null) {
+					imageData = blob.getBytes(1, (int) blob.length());
+					imageType = resultSet.getString(imgTypeColumn);
+					imageName = resultSet.getString(imgNameColumn);
+				}
+			}
+			
+			imageFile = new ImageFile();
+			imageFile.setData(imageData);
+			imageFile.setType(imageType);
+			imageFile.setName(imageName);
+						
+		} catch (Exception exception) {
+			System.out.print(exception.toString());
+			throw exception;        	
+			
+		} finally {
+			this.connection.close();
+		}
+		
+		return imageFile;
+	}
+
+	
+	// GET-ImageFile By beanId and imageName
+	protected ImageFile getImageFileByBeanIdAndName(String table, 
+			                                        String imgColumn, String imgTypeColumn, String imgNameColumn,
+			                                        String beanIdColumn,
+			                                        int beanId, String imageName) throws Exception {
+		ImageFile imageFile = null;
+		byte[] imageData = "".getBytes();
+		String imageType = "";
+		
+		try {
+			this.initConnection();
+			
+			// Statement:
+			// select <image>, <image.type> 
+			//   from <table> 
+			//  where <beanIdCol>=<beanId> and (<imgNameCol>=<imageName> or <imgNameCol> like "<imageName>.%")
+			
+	        String template = "select %s, %s from %s where %s=%d and (%s=\"" + imageName + "\" or %s like \"" + imageName + ".%s\")";
+	        String stmt = String.format(template, imgColumn, imgTypeColumn, 
+	        		                    table, 
+	        		                    beanIdColumn, beanId, imgNameColumn, imgNameColumn, "%");
+	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
+
+			if (resultSet.next()) {
+				Blob blob = resultSet.getBlob(imgColumn);
+				if (blob != null) {
+					imageData = blob.getBytes(1, (int) blob.length());
+					imageType = resultSet.getString(imgTypeColumn);
+				}
+			}
+			
+			imageFile = new ImageFile();
+			imageFile.setData(imageData);
+			imageFile.setType(imageType);
+			imageFile.setName(imageName);
+						
+		} catch (Exception exception) {
+			System.out.print(exception.toString());
+			throw exception;        	
+			
+		} finally {
+			this.connection.close();
+		}
+		
+		return imageFile;
+	}
+
+	
+	// UPDATE ImageFile
+	public String getImageFileExtention(ImageInputStream imageInputStream) throws URISyntaxException, IOException{
+	    try{
+	        Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
+	        ImageReader reader = iter.next();
+	        String formatName = reader.getFormatName();
+	        
+	        return formatName;
+	    }catch(Exception e){
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	
+	
+	public void updateImageFileByBeanId(File imageFile, 
+			String table, String imgColumn, String imgTypeColumn, String imgNameColumn, 
+			int beanId)
+			throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
+
+		if (imageFile == null)
+			return;
+
+		try {
+			this.initConnection();
+
+			// Statement:
+			// update <table>
+			// set <imgColumn>=<image>, <imgTypeCol>=<image.type>,
+			// <imgNameCol>=<image.name>
+			// where <beanIdColumn>=<beanId> and (<imgNameCol>=<image.name> or
+			// <imgNameCol> like "<image.name>.%")
+			String template = "update %s set %s=?, %s=?, %s=? where id=?;";
+			template = String.format(template, table, imgColumn, imgTypeColumn, imgNameColumn);
+
+			PreparedStatement stmt = this.connection.newPreparedStatement(template);
+
+			// Decode image from Base64
+			byte[] image = null;
+			if (imageFile.getContent() != null) {
+				byte[] bytes = imageFile.getContent().getBytes();
+				image = Base64.getDecoder().decode(bytes);
+			}
+
+			// Define imageType & image content Blob
+			ByteArrayInputStream byteInputStream = new ByteArrayInputStream(image);
+			ImageInputStream imageInputStream = ImageIO.createImageInputStream(byteInputStream);
+			String imageFileType = this.getImageFileExtention(imageInputStream);
+			String imageFileName = HtmlUtils.htmlUnescape(imageFile.getName());
+			Blob blob = this.connection.newBlob();
+			blob.setBytes(1, image);
+
+			// Bind statement parameters & execute
+			stmt.setBlob(1, blob); // <image>
+			stmt.setString(2, imageFileType.toLowerCase()); // <image.type>
+			stmt.setString(3, imageFileName); // <image.name>
+			stmt.setInt(4, beanId); // <beanId>
+
+			stmt.executeUpdate();
+
+			byteInputStream.close();
+			imageInputStream.close();
+
+		} catch (Exception exception) {
+			System.out.print(exception.toString());
+			throw exception;
+		} finally {
+			this.connection.close();
+		}
+	}	
+	
+	public void updateImageFileByBeanIdAndName(File imageFile, 
+			                                   String table, 
+			                                   String imgColumn, String imgTypeColumn, String imgNameColumn,
+			                                   String beanIdColumn,
+			                                   int beanId) 
+		throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
+		
+		if (imageFile == null)
+			return;
+		
+		try {
+			this.initConnection();
+			
+			// Statement:  
+			// update <table> 
+			//    set <imgColumn>=<image>, <imgTypeCol>=<image.type>, <imgNameCol>=<image.name>
+			//  where <beanIdColumn>=<beanId> and (<imgNameCol>=<image.name> or <imgNameCol> like "<image.name>.%")
+			String template = "update %s set %s=?, %s=?, %s=? where %s=? and (%s=\"%s\" or %s like \"%s.%s\");";
+			template = String.format(template, 
+								     table, 
+								     imgColumn, imgTypeColumn, imgNameColumn, 
+								     beanIdColumn, 
+								     imgNameColumn, imageFile.getName(), 
+								     imgNameColumn, imageFile.getName(),
+								     "%");
+
+			PreparedStatement stmt = this.connection.newPreparedStatement(template);
+			
+			// Decode image from Base64
+			byte[] image = null;
+			if (imageFile.getContent() != null) {
+				byte[] bytes = imageFile.getContent().getBytes();
+				image = Base64.getDecoder().decode(bytes);
+			}
+			
+			// Define imageType & image content Blob
+			ByteArrayInputStream byteInputStream = new ByteArrayInputStream(image);
+			ImageInputStream imageInputStream = ImageIO.createImageInputStream(byteInputStream);
+			String imageFileType = this.getImageFileExtention(imageInputStream);
+			String imageFileName = HtmlUtils.htmlUnescape(imageFile.getName());
+			Blob blob = this.connection.newBlob();
+			blob.setBytes(1, image);
+			
+			// Bind statement parameters & execute
+			stmt.setBlob(1, blob);				// <image>
+			stmt.setString(2, imageFileType.toLowerCase());	// <image.type>
+			stmt.setString(3, imageFileName);	// <image.name>
+	        stmt.setInt(4, beanId);				// <beanId>
+	        
+	        stmt.executeUpdate();
+			
+	        byteInputStream.close();
+	        imageInputStream.close();
+	        
+		} catch (Exception exception) {
+			System.out.print(exception.toString());
+			throw exception;        	
+		} finally {
+			this.connection.close();
+		}
+	}
+
+	
+	// Bean Persistency ----------------------------------------------------------------------------
 	
 	protected String columnNameOfAttribute(Object entityBean, String attributeName) {
 		Map<String,String> colMap = EntityMappingFileReader.columnMapForBeanClass(entityBean.getClassName());

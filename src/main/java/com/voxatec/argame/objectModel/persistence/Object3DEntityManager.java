@@ -1,5 +1,8 @@
 package com.voxatec.argame.objectModel.persistence;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,6 +14,7 @@ import java.util.Base64;
 import org.springframework.web.util.HtmlUtils;
 
 import com.voxatec.argame.objectModel.beans.File;
+import com.voxatec.argame.objectModel.beans.ImageFile;
 import com.voxatec.argame.objectModel.beans.Object3D;
 import com.voxatec.argame.objectModel.beans.Texture;
 
@@ -350,7 +354,7 @@ public class Object3DEntityManager extends EntityManager {
 			PreparedStatement stmt = this.connection.newPreparedStatement(
 					"insert into texture (name,image_type,image,object3D_id) values (?,?,?,?)");
 			String name = HtmlUtils.htmlUnescape(texFile.getName());
-			String imageType = HtmlUtils.htmlUnescape(texFile.getMimeType());
+			String imageType = HtmlUtils.htmlUnescape(texFile.getType());
 			Blob blob = this.connection.newBlob();
 			byte[] image = null;
 			if (texFile != null && texFile.getContent() != null) {
@@ -376,7 +380,7 @@ public class Object3DEntityManager extends EntityManager {
 		
 	}
 	
-
+/*
 	// ---- Get TEX file of object -------------------------------------------------------------------------
 	public byte[] getTexFile(Integer object3DId, String texFileName) throws SQLException {
 		byte[] imgData = "".getBytes();
@@ -406,10 +410,27 @@ public class Object3DEntityManager extends EntityManager {
 		
 		return imgData;
 	}
-		
+*/	
 	
-	// ---- Update TEX file of object ----------------------------------------------------------------------
-	public void updateTexFile(File texFile, Integer object3DId) throws SQLException {
+	// ---- Get Texture image file of object3D ---------------------------------------------------------------
+	public ImageFile getTextureFile(Integer object3DId, String texFileName) throws Exception {
+		ImageFile imgFile = null;
+		
+		try {
+			imgFile = this.getImageFileByBeanIdAndName("texture", 
+					                                   "image", "image_type", "name", "object3D_id", 
+				                                       object3DId, texFileName);
+		} catch (Exception exception) {
+			System.out.print(exception.toString());
+			throw exception;        	
+		}
+		
+		return imgFile;
+	}
+	
+	// ---- Update TEX image file of object ----------------------------------------------------------------
+	/*
+	public void updateTextureFile(File texFile, Integer object3DId) throws SQLException {
 		
 		try {
 			this.initConnection();
@@ -439,10 +460,20 @@ public class Object3DEntityManager extends EntityManager {
 			this.connection.close();
 		}
 	}
-
+	*/
 	
-	// ---- Delete TEX file of object -----------------------------------------------------------------
-	public void deleteTexFile(String texFileName, Integer object3DId) throws SQLException {
+	public void updateTextureFile(File texFile, Integer object3DId) throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
+		
+		this.updateImageFileByBeanIdAndName(
+				texFile, 
+                "texture", 
+                "image", "image_type", "name",
+                "object3D_id",
+                object3DId);
+	}
+	
+	// ---- Delete TEX image file of object ----------------------------------------------------------------
+	public void deleteTextureFile(String texFileName, Integer object3DId) throws SQLException {
 		
 		if (object3DId == EntityManager.UNDEF_ID)
 			return;   // nothing to do

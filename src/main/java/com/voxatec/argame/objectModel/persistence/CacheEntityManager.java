@@ -24,6 +24,7 @@ import com.voxatec.argame.objectModel.beans.City;
 import com.voxatec.argame.objectModel.beans.File;
 import com.voxatec.argame.objectModel.beans.ImageFile;
 import com.voxatec.argame.objectModel.beans.Object3D;
+import com.voxatec.argame.objectModel.beans.Riddle;
 import com.voxatec.argame.objectModel.beans.Scene;
 import com.voxatec.argame.objectModel.beans.Story;
 import com.voxatec.argame.objectModel.beans.CacheGroup;
@@ -125,6 +126,7 @@ public class CacheEntityManager extends EntityManager {
 			Scene scene = null;
 			Object3D obj3D = null;
 			Cache cache = null;
+			Riddle riddle = null;
 
 			while (resultSet.next()) {
 				// Adventure
@@ -171,6 +173,17 @@ public class CacheEntityManager extends EntityManager {
 					scene.setName(resultSet.getString("sce_name"));
 					scene.setText(HtmlUtils.htmlEscape(resultSet.getString("sce_text")));
 					sceneList.add(scene);
+					
+					// Riddle
+					int riddleId = resultSet.getInt("rid_id");
+					if (!resultSet.wasNull()) {
+						riddle = new Riddle();
+						riddle.setId(riddleId);
+						riddle.setChallengeText(HtmlUtils.htmlEscape(resultSet.getString("rid_challenge")));
+						riddle.setResponseText(HtmlUtils.htmlEscape(resultSet.getString("rid_response")));
+						riddle.setHintText(HtmlUtils.htmlEscape(resultSet.getString("rid_hint")));
+						scene.setRiddle(riddle);
+					}
 					
 					// Object3D
 					int obj3DId = resultSet.getInt("obj_id");
@@ -638,43 +651,18 @@ public class CacheEntityManager extends EntityManager {
 	
 	// ---- Get target image of cache --------------------------------------------------------------------
 	public ImageFile getTargetImageFile(Integer cacheId) throws Exception {
-		ImageFile imageFile = null;
-		byte[] imageData = "".getBytes();
-		String imageType = "*";
-		
+		ImageFile imgFile = null;
+			
 		try {
-			this.initConnection();
-			
-	        String template = "select target_img_file, target_img_file_type from cache where id=%d";
-	        String stmt = String.format(template, cacheId);
-	        ResultSet resultSet = this.connection.executeSelectStatement(stmt);
-
-			if (resultSet.next()) {
-				Blob blob = resultSet.getBlob("target_img_file");
-				if (blob != null) {
-					imageData = blob.getBytes(1, (int) blob.length());
-					imageType = resultSet.getString("target_img_file_type");
-					
-					System.out.println(String.format("getTargetImageFile: img-length: %s, img-type: %s", 
-													 imageData.length,
-													 imageType));
-
-				}
-			}
-			
-			imageFile = new ImageFile();
-			imageFile.setData(imageData);
-			imageFile.setMimeType(imageType);
-						
+			imgFile = this.getImageFileByBeanId("cache", 
+					                            "target_img_file", "target_img_file_type", "target_img_file_name", 
+					                            cacheId);
 		} catch (Exception exception) {
 			System.out.print(exception.toString());
 			throw exception;        	
-			
-		} finally {
-			this.connection.close();
 		}
-		
-		return imageFile;
+			
+		return imgFile;
 	}
 	
 	
@@ -693,6 +681,7 @@ public class CacheEntityManager extends EntityManager {
 	    return null;
 	}
 	
+	/*
 	public void updateTargetImageFile(File imageFile, Integer cacheId) 
 		throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
 		
@@ -734,5 +723,16 @@ public class CacheEntityManager extends EntityManager {
 		}
 	
 	}
-
+	 */
+	
+	public void updateTargetImageFile(File imageFile, Integer cacheId) 
+			throws SQLException, UnsupportedEncodingException, URISyntaxException, IOException {
+		
+		this.updateImageFileByBeanId(
+				imageFile, 
+                "cache", 
+                "target_img_file", "target_img_file_type", "target_img_file_name",
+                cacheId);
+	}
+	
 }
