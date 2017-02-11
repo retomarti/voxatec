@@ -9,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.Vector;
-import java.util.Base64;
 
 import org.springframework.web.util.HtmlUtils;
 
@@ -47,6 +46,7 @@ public class Object3DEntityManager extends EntityManager {
 					obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("obj_text")));
 					obj3D.setObjFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_obj_file_name")));
 					obj3D.setMtlFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_mtl_file_name")));
+					obj3D.setObjScaleFactor(resultSet.getDouble("obj_scale_factor"));
 					textureList = new Vector<Texture>();
 					obj3D.setTextureList(textureList);
 					object3DList.add(obj3D);
@@ -100,6 +100,7 @@ public class Object3DEntityManager extends EntityManager {
 					obj3D.setText(HtmlUtils.htmlEscape(resultSet.getString("obj_text")));
 					obj3D.setObjFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_obj_file_name")));
 					obj3D.setMtlFileName(HtmlUtils.htmlEscape(resultSet.getString("obj_mtl_file_name")));
+					obj3D.setObjScaleFactor(resultSet.getDouble("obj_scale_factor"));
 					textureList = new Vector<Texture>();
 					obj3D.setTextureList(textureList);
 				}
@@ -342,40 +343,22 @@ public class Object3DEntityManager extends EntityManager {
 	
 	
 	// ---- Create TEX image --------------------------------------------------------------------------
-	public void createTexFile(File texFile, Integer object3DId) throws SQLException {
+	public void createTexFile(File texFile, Integer object3DId) throws Exception {
 		
 		if (object3DId == EntityManager.UNDEF_ID)
 			return;
 		
 		try {
-			this.initConnection();
-
-			// Insert tex-image into DB
-			PreparedStatement stmt = this.connection.newPreparedStatement(
-					"insert into texture (name,image_type,image,object3D_id) values (?,?,?,?)");
-			String name = HtmlUtils.htmlUnescape(texFile.getName());
-			String imageType = HtmlUtils.htmlUnescape(texFile.getType());
-			Blob blob = this.connection.newBlob();
-			byte[] image = null;
-			if (texFile != null && texFile.getContent() != null) {
-				byte[] bytes = texFile.getContent().getBytes();
-				image = Base64.getDecoder().decode(bytes);
-				blob.setBytes(1, image);
-			}
-			
-			// Bind statement parameters & execute
-			stmt.setString(1, name);
-			stmt.setString(2, imageType);
-			stmt.setBlob(3, blob);
-	        stmt.setInt(4, object3DId);
-	        stmt.executeUpdate();
+			this.createImageFile(
+					texFile, 
+	                "texture", 
+	                "image", "image_type", "name",
+	                "object3D_id",
+	                object3DId);
 			
 		} catch (SQLException exception) {
 			System.out.print(exception.toString());
 			throw exception;
-
-		} finally {
-			this.connection.close();
 		}
 	}
 	

@@ -2,7 +2,6 @@ package com.voxatec.argame.objectModel.beans;
 
 import java.util.Vector;
 
-import com.voxatec.argame.objectModel.beans.Cache;
 import com.voxatec.argame.objectModel.beans.NamedObject;
 import com.voxatec.argame.objectModel.beans.Scene;
 

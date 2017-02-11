@@ -1,7 +1,5 @@
 package com.voxatec.argame.objectModel.persistence;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -11,12 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Base64;
-import java.util.Iterator;
 import java.util.Vector;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 
 import org.springframework.web.util.HtmlUtils;
 
@@ -86,6 +79,7 @@ public class CacheEntityManager extends EntityManager {
 					cache = new Cache();
 					cache.setId(cacheId);
 					cache.setName(HtmlUtils.htmlEscape(resultSet.getString("cache_name")));
+					cache.setTargetImageName(HtmlUtils.htmlEscape(resultSet.getString("target_img_name")));
 					cache.setText(HtmlUtils.htmlEscape(resultSet.getString("cache_text")));
 					cache.setStreet(HtmlUtils.htmlEscape(resultSet.getString("street")));
 					cache.setTargetImageFileName(HtmlUtils.htmlEscape(resultSet.getString("target_img_file_name")));
@@ -507,7 +501,8 @@ public class CacheEntityManager extends EntityManager {
 			this.initConnection();
 
 			// Insert cacheGroup into DB
-			String template = "insert into cache (cache_grp_id,name,target_img_name,text,street,gps_lat,gps_long) values (%d,\"%s\",\"%s\",\"%s\",%f,%f)";
+			String template = "insert into cache (cache_grp_id,name,target_img_name,text,street,gps_lat,gps_long) "
+					                   + "values (%d,\"%s\",\"%s\",\"%s\",\"%s\",%f,%f)";
 			Integer cacheGroupId = cache.getCacheGroupId();
 			String name = HtmlUtils.htmlUnescape(cache.getName());
 			String targetImageName = HtmlUtils.htmlUnescape(cache.getTargetImageName());

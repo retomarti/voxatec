@@ -100,6 +100,57 @@ public class EntityManager {
 	
     // Image Persistency ----------------------------------------------------------------------------
 
+	// INSERT-ImageFile
+	protected void createImageFile(File imgFile, 
+								String table, String imgColumn, String imgTypeColumn, String imgNameColumn,
+								String beanIdColumn, int beanId) throws SQLException, IOException, URISyntaxException {
+		
+		try {
+			this.initConnection();
+
+			// Statement:
+			// INSERT INTO <table>
+			// (<imgColumn>, <imgTypeColumn>, <imgNameColumn>, <beanIdColumn>)
+			// VALUES
+			// (<imgFile.content>, <imgFile.imageType>, <imgFile.name>, <beanId>)
+
+			String template = "insert into %s (%s,%s,%s,%s) values (?,?,?,?)";
+	        template = String.format(template, table, imgColumn, imgTypeColumn, imgNameColumn, beanIdColumn);
+
+			PreparedStatement stmt = this.connection.newPreparedStatement(template);
+			
+			// Bind values
+			Blob blob = this.connection.newBlob();
+			byte[] image = null;
+			if (imgFile.getContent() != null) {
+				byte[] bytes = imgFile.getContent().getBytes();
+				image = Base64.getDecoder().decode(bytes);
+				blob.setBytes(1, image);
+			}
+
+			ByteArrayInputStream byteInputStream = new ByteArrayInputStream(image);
+			ImageInputStream imageInputStream = ImageIO.createImageInputStream(byteInputStream);
+			String imageFileType = this.getImageFileExtention(imageInputStream);
+			String imageName = HtmlUtils.htmlUnescape(imgFile.getName());
+						
+			// Bind statement parameters & execute
+			stmt.setBlob(1, blob);
+			stmt.setString(2, imageFileType.toLowerCase());
+			stmt.setString(3, imageName);
+	        stmt.setInt(4, beanId);
+	        
+	        stmt.executeUpdate();
+			
+		} catch (SQLException exception) {
+			System.out.print(exception.toString());
+			throw exception;
+
+		} finally {
+			this.connection.close();
+		}
+	}
+
+	
 	// GET-ImageFile by beanId
 	protected ImageFile getImageFileByBeanId(String table, 
 			                                 String imgColumn, String imgTypeColumn, String imgNameColumn,
@@ -221,10 +272,10 @@ public class EntityManager {
 
 			// Statement:
 			// update <table>
-			// set <imgColumn>=<image>, <imgTypeCol>=<image.type>,
-			// <imgNameCol>=<image.name>
+			// set <imgColumn>=<image>, <imgTypeCol>=<image.type>, <imgNameCol>=<image.name>
 			// where <beanIdColumn>=<beanId> and (<imgNameCol>=<image.name> or
 			// <imgNameCol> like "<image.name>.%")
+			
 			String template = "update %s set %s=?, %s=?, %s=? where id=?;";
 			template = String.format(template, table, imgColumn, imgTypeColumn, imgNameColumn);
 
@@ -245,7 +296,7 @@ public class EntityManager {
 			Blob blob = this.connection.newBlob();
 			blob.setBytes(1, image);
 
-			// Bind statement parameters & execute
+			// Bind statement parameters '?' & execute
 			stmt.setBlob(1, blob); // <image>
 			stmt.setString(2, imageFileType.toLowerCase()); // <image.type>
 			stmt.setString(3, imageFileName); // <image.name>
@@ -282,12 +333,14 @@ public class EntityManager {
 			//    set <imgColumn>=<image>, <imgTypeCol>=<image.type>, <imgNameCol>=<image.name>
 			//  where <beanIdColumn>=<beanId> and (<imgNameCol>=<image.name> or <imgNameCol> like "<image.name>.%")
 			String template = "update %s set %s=?, %s=?, %s=? where %s=? and (%s=\"%s\" or %s like \"%s.%s\");";
+			
+			String imgFileName = HtmlUtils.htmlUnescape(imageFile.getName());
 			template = String.format(template, 
 								     table, 
 								     imgColumn, imgTypeColumn, imgNameColumn, 
 								     beanIdColumn, 
-								     imgNameColumn, imageFile.getName(), 
-								     imgNameColumn, imageFile.getName(),
+								     imgNameColumn, imgFileName, 
+								     imgNameColumn, imgFileName,
 								     "%");
 
 			PreparedStatement stmt = this.connection.newPreparedStatement(template);
@@ -302,15 +355,14 @@ public class EntityManager {
 			// Define imageType & image content Blob
 			ByteArrayInputStream byteInputStream = new ByteArrayInputStream(image);
 			ImageInputStream imageInputStream = ImageIO.createImageInputStream(byteInputStream);
-			String imageFileType = this.getImageFileExtention(imageInputStream);
-			String imageFileName = HtmlUtils.htmlUnescape(imageFile.getName());
+			String imgFileType = this.getImageFileExtention(imageInputStream);
 			Blob blob = this.connection.newBlob();
 			blob.setBytes(1, image);
 			
-			// Bind statement parameters & execute
+			// Bind statement parameters '?' & execute
 			stmt.setBlob(1, blob);				// <image>
-			stmt.setString(2, imageFileType.toLowerCase());	// <image.type>
-			stmt.setString(3, imageFileName);	// <image.name>
+			stmt.setString(2, imgFileType.toLowerCase());	// <image.type>
+			stmt.setString(3, imgFileName);		// <image.name>
 	        stmt.setInt(4, beanId);				// <beanId>
 	        
 	        stmt.executeUpdate();
@@ -354,11 +406,6 @@ public class EntityManager {
 	protected String getInsertColumnValueList(Object entityBean) {
 		Map<String,String> colMap = EntityMappingFileReader.columnMapForBeanClass(entityBean.getClassName());
 		String columnValueList = new String();
-		
-		for (String key: colMap.keySet()) {
-		    String attributeName = key;
-		    
-		}
 		
 		return columnValueList;
 	}
