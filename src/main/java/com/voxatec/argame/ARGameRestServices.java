@@ -569,6 +569,7 @@ public class ARGameRestServices {
 			if (theObject3D != null) {
 				theObject3D.setName(object3D.getName());
 				theObject3D.setText(object3D.getText());
+				theObject3D.setObjScaleFactor(object3D.getObjScaleFactor());
 				entityMgr.updateObject3D(theObject3D);
 			}
 		}

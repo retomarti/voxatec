@@ -171,11 +171,12 @@ public class Object3DEntityManager extends EntityManager {
 		try {
 			this.initConnection();
 
-			String template = "update object3D set name=\"%s\", text=\"%s\" where id=%d";
+			String template = "update object3D set name=\"%s\", text=\"%s\", obj_scale_factor=%f where id=%d";
 			String name = HtmlUtils.htmlUnescape(object3D.getName());
 			String text = this.queryfiableString(HtmlUtils.htmlUnescape(object3D.getText()));
+			double scaleFactor = object3D.getObjScaleFactor();
 			Integer id  = object3D.getId();
-			String stmt = String.format(template, name, text, id);
+			String stmt = String.format(template, name, text, scaleFactor, id);
 			
 			this.connection.executeUpdateStatement(stmt);
 
