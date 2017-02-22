@@ -79,10 +79,11 @@ public class CacheEntityManager extends EntityManager {
 					cache = new Cache();
 					cache.setId(cacheId);
 					cache.setName(HtmlUtils.htmlEscape(resultSet.getString("cache_name")));
-					cache.setTargetImageName(HtmlUtils.htmlEscape(resultSet.getString("target_img_name")));
 					cache.setText(HtmlUtils.htmlEscape(resultSet.getString("cache_text")));
-					cache.setStreet(HtmlUtils.htmlEscape(resultSet.getString("street")));
+					cache.setTargetImageName(HtmlUtils.htmlEscape(resultSet.getString("target_img_name")));
 					cache.setTargetImageFileName(HtmlUtils.htmlEscape(resultSet.getString("target_img_file_name")));
+					cache.setTargetWidth(resultSet.getFloat("target_width"));
+					cache.setStreet(HtmlUtils.htmlEscape(resultSet.getString("street")));
 					cache.setGpsLatitude(resultSet.getBigDecimal("gps_lat"));
 					cache.setGpsLongitude(resultSet.getBigDecimal("gps_long"));
 					cacheList.add(cache);
@@ -200,6 +201,7 @@ public class CacheEntityManager extends EntityManager {
 						cache.setGpsLatitude(resultSet.getBigDecimal("cah_gps_lat"));
 						cache.setGpsLongitude(resultSet.getBigDecimal("cah_gps_long"));
 						cache.setTargetImageName(HtmlUtils.htmlEscape(resultSet.getString("cah_target_img_name")));
+						cache.setTargetWidth(resultSet.getFloat("cah_target_width"));
 						cache.setCacheGroupId(cacheGroupId);
 						scene.setCache(cache);
 					}
@@ -538,15 +540,16 @@ public class CacheEntityManager extends EntityManager {
 		try {
 			this.initConnection();
 
-			String template = "update cache set name=\"%s\", target_img_name=\"%s\", text=\"%s\", street=\"%s\", gps_lat=%f, gps_long=%f where id=%d";
+			String template = "update cache set name=\"%s\", target_width=\"%f\", target_img_name=\"%s\", text=\"%s\", street=\"%s\", gps_lat=%f, gps_long=%f where id=%d";
 			String name = HtmlUtils.htmlUnescape(cache.getName());
+			Number targetWidth = cache.getTargetWidth();
 			String targetImgName = HtmlUtils.htmlUnescape(cache.getTargetImageName());
 			String text = this.queryfiableString(HtmlUtils.htmlUnescape(cache.getText()));
 			String street = HtmlUtils.htmlUnescape(cache.getStreet());
 			BigDecimal gpsLat = cache.getGpsLatitude();
 			BigDecimal gpsLong = cache.getGpsLongitude();
 			Integer id  = cache.getId();
-			String stmt = String.format(template, name, targetImgName, text, street, gpsLat, gpsLong, id);
+			String stmt = String.format(template, name, targetWidth, targetImgName, text, street, gpsLat, gpsLong, id);
 			
 			
 			this.connection.executeUpdateStatement(stmt);
@@ -579,6 +582,7 @@ public class CacheEntityManager extends EntityManager {
 				theCache.setId(cacheId);
 				theCache.setName(HtmlUtils.htmlEscape(resultSet.getString("name")));
 				theCache.setTargetImageName(HtmlUtils.htmlEscape(resultSet.getString("target_img_name")));
+				theCache.setTargetWidth(resultSet.getFloat("target_width"));
 				theCache.setText(HtmlUtils.htmlEscape(resultSet.getString("text")));
 				theCache.setStreet(HtmlUtils.htmlEscape(resultSet.getString("street")));
 				theCache.setGpsLatitude(resultSet.getBigDecimal("gps_lat"));

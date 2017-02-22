@@ -915,6 +915,7 @@ public class ARGameRestServices {
 			if (theCache != null) {
 				theCache.setName(cache.getName());
 				theCache.setText(cache.getText());
+				theCache.setTargetWidth(cache.getTargetWidth());
 				theCache.setTargetImageName(cache.getTargetImageName());
 				theCache.setStreet(cache.getStreet());
 				theCache.setGpsLatitude(cache.getGpsLatitude());

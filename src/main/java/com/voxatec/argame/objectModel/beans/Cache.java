@@ -10,6 +10,7 @@ public class Cache extends NamedObject {
 	private String street;
 	private String targetImageName;
 	private String targetImageFileName;
+	private Number targetWidth;
 	private BigDecimal gpsLatitude;
 	private BigDecimal gpsLongitude;
 
@@ -60,6 +61,14 @@ public class Cache extends NamedObject {
 
 	public void setGpsLongitude(BigDecimal gpsLongitude) {
 		this.gpsLongitude = gpsLongitude;
+	}
+
+	public Number getTargetWidth() {
+		return targetWidth;
+	}
+
+	public void setTargetWidth(Number targetWidth) {
+		this.targetWidth = targetWidth;
 	}
 
 }
