@@ -5,6 +5,7 @@ import java.util.*;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -36,7 +37,7 @@ public class ARGameRestServices {
     //------------------ Get Prototypes -----------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/prototypes", method = RequestMethod.GET)
-    public Vector<NamedObject> getPrototypes() throws ObjectNotFoundException {
+    public List<NamedObject> getPrototypes() throws ObjectNotFoundException {
 		
 		Vector<NamedObject> prototypes = new Vector<NamedObject>();
 		
@@ -72,7 +73,7 @@ public class ARGameRestServices {
 	//------------------ Get all Adventures ------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/adventures", method = RequestMethod.GET)
-    public Vector<Adventure> getAdventures() throws ObjectNotFoundException {
+    public List<Adventure> getAdventures() throws ObjectNotFoundException {
     	
     	Vector<Adventure> adventureList = null;
     	String errorMsg = "";
@@ -194,7 +195,7 @@ public class ARGameRestServices {
     //------------------ Get all Stories ---------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/stories", method = RequestMethod.GET)
-    public Vector<Story> getStories() throws ObjectNotFoundException {
+    public List<Story> getStories() throws ObjectNotFoundException {
     	
     	Vector<Story> storyList = null;
     	String errorMsg = "";
@@ -316,7 +317,7 @@ public class ARGameRestServices {
 	//------------------ Get all Adventure Scenes ----------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/adventure-scenes", method = RequestMethod.GET)
-    public Vector<Adventure> getAdventureScenes() throws ObjectNotFoundException {
+    public List<Adventure> getAdventureScenes() throws ObjectNotFoundException {
     	
     	Vector<Adventure> adventureList = null;
     	String errorMsg = "";
@@ -343,29 +344,32 @@ public class ARGameRestServices {
 	
 	//------------------ Get nearby Adventure Caches ----------------------------------------------	
 	@CrossOrigin
-    @RequestMapping(value = "/adventure-caches", method = RequestMethod.GET)
-    public Vector<Adventure> getNearbyAdventureCaches() throws ObjectNotFoundException {
+    @RequestMapping(value = "/nearby-adventure-caches", method = RequestMethod.GET)
+    public List<City> getNearbyAdventureCaches(
+    		@RequestParam(value="gpsLong",defaultValue="0") float gpsLong,
+    		@RequestParam(value="gpsLat", defaultValue="0") float gpsLat
+    	) throws ObjectNotFoundException {
     	
-    	Vector<Adventure> adventureList = null;
+    	List<City> cityList = null;
     	String errorMsg = "";
     	
     	try {
-    		this.logRequest("GET request for nearby adventure caches");
+    		this.logRequest("GET request for nearby city caches");
     		CacheEntityManager entityMgr = new CacheEntityManager();
-    		adventureList = entityMgr.getNearbyAdventureCaches();
+    		cityList = entityMgr.getNearbyCityCaches(gpsLong, gpsLat);
     	}
     	catch (Exception exception) {
     		System.out.println(exception.getMessage());
     		errorMsg = exception.getMessage();
-    		adventureList = null;
+    		cityList = null;
     	}
     		
-    	if (adventureList == null) {
+    	if (cityList == null) {
     		// Objects not found in database
             throw new ObjectNotFoundException("adventures", errorMsg);
     	}
     			
-    	return adventureList;
+    	return cityList;
     }
 	
 	
@@ -468,7 +472,7 @@ public class ARGameRestServices {
 	//------------------ Get all Objects3D -------------------------------------------------------	
 	@CrossOrigin
     @RequestMapping(value = "/objects3D", method = RequestMethod.GET)
-    public Vector<Object3D> getObjects3D() throws ObjectNotFoundException {
+    public List<Object3D> getObjects3D() throws ObjectNotFoundException {
     	
     	Vector<Object3D> object3DList = null;
     	String errorMsg = "";
@@ -620,7 +624,7 @@ public class ARGameRestServices {
 	//------------------ Get all Cities -----------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/cities", method = RequestMethod.GET)
-    public Vector<City> getCities() throws ObjectNotFoundException {
+    public List<City> getCities() throws ObjectNotFoundException {
     	
     	Vector<City> allCities = null;
     	String errorMsg = "";
@@ -842,7 +846,7 @@ public class ARGameRestServices {
 	//------------------ Get all City Caches -----------------------------------------------------------
 	@CrossOrigin
     @RequestMapping(value = "/city-caches", method = RequestMethod.GET)
-    public Vector<City> getCityCaches() throws ObjectNotFoundException {
+    public List<City> getCityCaches() throws ObjectNotFoundException {
     	
     	Vector<City> cityList = null;
     	String errorMsg = "";

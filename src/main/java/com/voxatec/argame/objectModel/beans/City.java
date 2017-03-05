@@ -10,8 +10,8 @@ public class City extends NamedObject {
     // attributes
     private String country;
     private String zip;
-    private Vector<CacheGroup> cacheGroupList;
-    private Vector<Adventure> adventureList;
+    private List<CacheGroup> cacheGroupList;
+    private List<Adventure> adventureList;
     
 	// accessors
     public void setCountry(String aCountry) {
@@ -34,16 +34,26 @@ public class City extends NamedObject {
     	this.cacheGroupList = cacheGroupList;
     }
     
-    public Vector<CacheGroup> getCacheGroupList() {
+    public List<CacheGroup> getCacheGroupList() {
     	return cacheGroupList;
     }
     
-    public Vector<Adventure> getAdventureList() {
+    public List<Adventure> getAdventureList() {
 		return adventureList;
 	}
 
-	public void setAdventureList(Vector<Adventure> adventureList) {
+	public void setAdventureList(List<Adventure> adventureList) {
 		this.adventureList = adventureList;
 	}
+	
+	public Adventure firstAdventure() {
+		if (this.getAdventureList() != null & this.getAdventureList().size() > 0) {
+			return this.getAdventureList().get(0);
+		}
+		else {
+			return null;
+		}
+	}
+
     
 }

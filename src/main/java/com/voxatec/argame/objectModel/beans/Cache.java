@@ -70,5 +70,20 @@ public class Cache extends NamedObject {
 	public void setTargetWidth(Number targetWidth) {
 		this.targetWidth = targetWidth;
 	}
+	
+	
+	public float geoDistanceTo (float locLatitude, float locLongitude) {
+		double earthRadius = 6371000; // meters
+		float lat1  = this.getGpsLatitude().floatValue();
+		float lng1  = this.getGpsLongitude().floatValue();
+		double dLat = Math.toRadians(locLatitude - lat1);
+		double dLng = Math.toRadians(locLongitude - lng1);
+		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(Math.toRadians(lat1))
+				* Math.cos(Math.toRadians(locLongitude)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		float dist = (float) (earthRadius * c);
+
+		return dist;
+	}
 
 }

@@ -1,6 +1,6 @@
 package com.voxatec.argame.objectModel.beans;
 
-import java.util.Vector;
+import java.util.List;
 
 import com.voxatec.argame.objectModel.beans.NamedObject;
 import com.voxatec.argame.objectModel.beans.Scene;
@@ -11,7 +11,7 @@ public class Story extends NamedObject {
 	// attributes
 	private int adventureId;
 	private int seqNr;
-	private Vector<Scene> sceneList;
+	private List<Scene> sceneList;
 	
 	// accessors
 	public void setAdventureId(int adventureId) {
@@ -30,11 +30,11 @@ public class Story extends NamedObject {
 		return seqNr;
 	}
 	
-	public Vector<Scene> getSceneList() {
+	public List<Scene> getSceneList() {
 		return sceneList;
 	}
 
-	public void setSceneList(Vector<Scene> aSceneList) {
+	public void setSceneList(List<Scene> aSceneList) {
 		sceneList = aSceneList;
 	}
 

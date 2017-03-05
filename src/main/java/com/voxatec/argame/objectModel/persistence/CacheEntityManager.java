@@ -9,6 +9,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Vector;
 
 import org.springframework.web.util.HtmlUtils;
@@ -20,6 +23,7 @@ import com.voxatec.argame.objectModel.beans.Object3D;
 import com.voxatec.argame.objectModel.beans.Riddle;
 import com.voxatec.argame.objectModel.beans.Scene;
 import com.voxatec.argame.objectModel.beans.Story;
+import com.voxatec.argame.util.LocationComparator;
 import com.voxatec.argame.objectModel.beans.CacheGroup;
 import com.voxatec.argame.objectModel.beans.Adventure;
 import com.voxatec.argame.objectModel.beans.Cache;
@@ -27,6 +31,11 @@ import com.voxatec.argame.objectModel.beans.Cache;
 
 
 public class CacheEntityManager extends EntityManager {
+	
+	// User location
+	protected float userLocLongitude = 0;
+	protected float userLocLatitude = 0;
+
 
 	// ---- Get all caches with cities -----------------------------------------------------------------------
 	public Vector<City> getCityCaches() throws SQLException {
@@ -103,11 +112,10 @@ public class CacheEntityManager extends EntityManager {
 	
 	
 	// ---- Get nearby adventure caches -----------------------------------------------------------------------
-	public Vector<Adventure> getNearbyAdventureCaches() throws SQLException {
+		
+	public List<City> getNearbyCityCaches(float userLocLongitude, float userLocLatitude) throws SQLException {
 
-		Vector<Adventure> adventureList = new Vector<Adventure>();
-		Vector<Story> storyList = null;
-		Vector<Scene> sceneList = null;
+		List<City> cityList = new Vector<City>();
 
 		try {
 			this.initConnection();
@@ -115,15 +123,51 @@ public class CacheEntityManager extends EntityManager {
 			String stmt = "select * from v_adventure_cache";
 			ResultSet resultSet = this.connection.executeSelectStatement(stmt);
 
+			LocationComparator.setUserLocLatitude(userLocLatitude);
+			LocationComparator.setUserLocLongitude(userLocLongitude);
+
+			City city = null;
+			CacheGroup cacheGroup = null;
 			Adventure adventure = null;
 			Story story = null;
-			CacheGroup cacheGroup = null;
 			Scene scene = null;
 			Object3D obj3D = null;
 			Cache cache = null;
 			Riddle riddle = null;
 
 			while (resultSet.next()) {
+				
+				// City 
+				int cityId = resultSet.getInt("cit_id");
+				if (!resultSet.wasNull() && (city == null || cityId != city.getId())) {
+					// Sort adventure list of previous city first
+					if (city != null) {
+						// Sort adventure list according to distance to user location
+						Collections.sort(city.getAdventureList(), LocationComparator.AdventureComparator);
+					}
+					
+					city = new City();
+					city.setId(cityId);
+					city.setName(HtmlUtils.htmlEscape(resultSet.getString("cit_name")));
+					city.setAdventureList(new Vector<Adventure>());
+					cityList.add(city);
+					
+					// Reset variables for new city
+					cacheGroup = null;
+					adventure = null;
+					story = null;
+				}
+				
+				// CacheGroup
+				int cacheGroupId = resultSet.getInt("cag_id");
+				if (!resultSet.wasNull() && (cacheGroup == null || cacheGroupId != cacheGroup.getId())) {
+					cacheGroup = new CacheGroup();
+					cacheGroup.setId(cacheGroupId);
+					cacheGroup.setName(HtmlUtils.htmlEscape(resultSet.getString("cag_name")));
+					cacheGroup.setText(HtmlUtils.htmlEscape(resultSet.getString("cag_text")));
+					cacheGroup.setCityId(cityId);
+				}
+				
 				// Adventure
 				int adventureId = resultSet.getInt("adv_id");
 				if (adventure == null || adventureId != adventure.getId()) {
@@ -131,9 +175,8 @@ public class CacheEntityManager extends EntityManager {
 					adventure.setId(resultSet.getInt("adv_id"));
 					adventure.setName(HtmlUtils.htmlEscape(resultSet.getString("adv_name")));
 					adventure.setText(HtmlUtils.htmlEscape(resultSet.getString("adv_text")));
-					storyList = new Vector<Story>();
-					adventure.setStoryList(storyList);
-					adventureList.add(adventure);
+					adventure.setStoryList(new Vector<Story>());
+					city.getAdventureList().add(adventure);
 				}
 
 				// Story
@@ -145,18 +188,8 @@ public class CacheEntityManager extends EntityManager {
 					story.setSeqNr(resultSet.getInt("sto_seq_nr"));
 					story.setName(HtmlUtils.htmlEscape(resultSet.getString("sto_name")));
 					story.setText(HtmlUtils.htmlEscape(resultSet.getString("sto_text")));
-					sceneList = new Vector<Scene>();
-					story.setSceneList(sceneList);
-					storyList.add(story);
-				}
-				
-				// CacheGroup
-				int cacheGroupId = resultSet.getInt("cag_id");
-				if (!resultSet.wasNull() && (cacheGroup == null || cacheGroupId != cacheGroup.getId())) {
-					cacheGroup = new CacheGroup();
-					cacheGroup.setId(cacheGroupId);
-					cacheGroup.setName(HtmlUtils.htmlEscape(resultSet.getString("cag_name")));
-					cacheGroup.setText(HtmlUtils.htmlEscape(resultSet.getString("cag_text")));
+					story.setSceneList(new Vector<Scene>());
+					adventure.getStoryList().add(story);
 				}
 				
 				// Scene
@@ -167,7 +200,7 @@ public class CacheEntityManager extends EntityManager {
 					scene.setSeqNr(resultSet.getInt("sce_seq_nr"));
 					scene.setName(resultSet.getString("sce_name"));
 					scene.setText(HtmlUtils.htmlEscape(resultSet.getString("sce_text")));
-					sceneList.add(scene);
+					story.getSceneList().add(scene);
 					
 					// Riddle
 					int riddleId = resultSet.getInt("rid_id");
@@ -207,6 +240,8 @@ public class CacheEntityManager extends EntityManager {
 					}
 				}
 			}
+			
+			Collections.sort(cityList, LocationComparator.CityComparator);
 
 		} catch (SQLException exception) {
 			System.out.print(exception.toString());
@@ -215,8 +250,8 @@ public class CacheEntityManager extends EntityManager {
 		} finally {
 			this.connection.close();
 		}
-
-		return adventureList;
+		
+		return cityList;
 	}
 	
 	

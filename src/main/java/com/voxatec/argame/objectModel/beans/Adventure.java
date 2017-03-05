@@ -1,6 +1,6 @@
 package com.voxatec.argame.objectModel.beans;
 
-import java.util.Vector;
+import java.util.List;
 
 import com.voxatec.argame.objectModel.beans.NamedObject;
 import com.voxatec.argame.objectModel.beans.Story;
@@ -9,15 +9,33 @@ import com.voxatec.argame.objectModel.beans.Story;
 public class Adventure extends NamedObject {
 
 	// attributes
-	private Vector<Story> storyList;
+	private List<Story> storyList;
 
 	// accessors
-	public Vector<Story> getStoryList() {
+	public List<Story> getStoryList() {
 		return storyList;
 	}
 
-	public void setStoryList(Vector<Story> aStoryList) {
+	public void setStoryList(List<Story> aStoryList) {
 		storyList = aStoryList;
+	}
+	
+	public Cache firstCache() {
+		Cache firstCache = null;
+		
+		if (this.getStoryList().size() > 0) {
+			Story firstStory = this.getStoryList().get(0);
+			
+			List<Scene> sceneList = firstStory.getSceneList();
+			if (sceneList != null && sceneList.size() > 0) {
+				Scene firstScene = sceneList.get(0);
+				
+				if (firstScene != null) {
+					firstCache = firstScene.getCache();
+				}
+			}
+		}
+		return firstCache;
 	}
 	
 }

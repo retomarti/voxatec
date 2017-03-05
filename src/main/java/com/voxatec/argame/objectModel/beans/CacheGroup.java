@@ -1,6 +1,6 @@
 package com.voxatec.argame.objectModel.beans;
 
-import java.util.Vector;
+import java.util.List;
 
 public class CacheGroup extends NamedObject {
 	
@@ -8,7 +8,7 @@ public class CacheGroup extends NamedObject {
 	private String text;
 	private String targetImageDatFileName;
 	private String targetImageXmlFileName;
-	private Vector<Cache> cacheList;
+	private List<Cache> cacheList;
 	private int cityId;
 	
 	// Accessors
@@ -36,11 +36,11 @@ public class CacheGroup extends NamedObject {
 		this.targetImageXmlFileName = fileName;
 	}
 	
-	public Vector<Cache> getCacheList() {
+	public List<Cache> getCacheList() {
 		return cacheList;
 	}
 	
-	public void setCacheList(Vector<Cache> cacheList) {
+	public void setCacheList(List<Cache> cacheList) {
 		this.cacheList = cacheList;
 	}
 	
